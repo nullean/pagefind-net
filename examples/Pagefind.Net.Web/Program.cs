@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.StaticFiles;
 using Pagefind.Net;
 
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Pagefind.Net.E2E.Tests")]
+
 var builder = WebApplication.CreateBuilder(args);
 var app = builder.Build();
 
@@ -18,8 +20,9 @@ contentTypeProvider.Mappings[".pagefind"] = "application/wasm";
 app.UseStaticFiles(new StaticFileOptions { ContentTypeProvider = contentTypeProvider });
 app.MapFallbackToFile("index.html");
 
-Console.WriteLine("Search UI available at: http://localhost:5200");
-app.Run("http://localhost:5200");
+var url = args.FirstOrDefault(a => a.StartsWith("--urls="))?["--urls=".Length..] ?? "http://localhost:5200";
+Console.WriteLine($"Search UI available at: {url}");
+app.Run();
 
 static async Task BuildSearchIndex(string wwwroot)
 {
