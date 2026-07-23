@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>Getting Started</title></head>
+<body data-pagefind-body>
+  <h1>Getting Started</h1>
+  <p>
+    Welcome to the pagefind-net example. This guide shows you how to install and configure
+    the library so you can add static full-text search to your .NET documentation site.
+  </p>
+
+  <h2 id="installation">Installation</h2>
+  <p>
+    Install the <code>Pagefind.Net</code> NuGet package into your project:
+  </p>
+  <pre><code>dotnet add package Pagefind.Net</code></pre>
+
+  <h2 id="quickstart">Quickstart</h2>
+  <p>
+    Create a <code>PagefindIndex</code>, add records, and call <code>WriteAsync</code>:
+  </p>
+  <pre><code>
+var index = new PagefindIndex();
+index.AddRecord(new PagefindRecord { Url = "/guide/", Title = "Guide", Content = "…" });
+await index.WriteAsync(outputDir);
+  </code></pre>
+
+  <h2 id="frontend">Frontend Runtime</h2>
+  <p>
+    pagefind-net writes only the index data files. You must supply <code>pagefind.js</code>
+    and the <code>wasm.*.pagefind</code> files from the <code>pagefind</code> npm package.
+  </p>
+</body>
+</html>

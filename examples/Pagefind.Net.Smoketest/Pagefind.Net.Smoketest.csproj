@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Pagefind.Net.Smoketest</RootNamespace>
+    <Description>AOT smoke test — published natively to verify trimmer/AOT compatibility.</Description>
+    <PublishAot>true</PublishAot>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Pagefind.Net\Pagefind.Net.csproj" />
+  </ItemGroup>
+</Project>

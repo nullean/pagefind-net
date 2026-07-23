@@ -1,0 +1,27 @@
+<Solution>
+  <Folder Name="/build/">
+    <File Path=".editorconfig" />
+    <File Path=".github/workflows/ci.yml" />
+    <File Path=".gitignore" />
+    <File Path="build.bat" />
+    <File Path="build.sh" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+    <File Path=".config/dotnet-tools.json" />
+    <File Path="global.json" />
+    <File Path="NOTICE.txt" />
+    <File Path="README.md" />
+    <Project Path="build/scripts/scripts.fsproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/Pagefind.Net/Pagefind.Net.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Pagefind.Net.Tests/Pagefind.Net.Tests.csproj" />
+    <Project Path="tests/Pagefind.Net.E2E.Tests/Pagefind.Net.E2E.Tests.csproj" />
+  </Folder>
+  <Folder Name="/examples/">
+    <Project Path="examples/Pagefind.Net.Example/Pagefind.Net.Example.csproj" />
+    <Project Path="examples/Pagefind.Net.Smoketest/Pagefind.Net.Smoketest.csproj" />
+  </Folder>
+</Solution>

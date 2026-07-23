@@ -1,0 +1,10 @@
+pagefind
+pf_meta
+pf_index
+pf_fragment
+pf_filter
+cbor
+wasm
+BM25
+stemmer
+snowball

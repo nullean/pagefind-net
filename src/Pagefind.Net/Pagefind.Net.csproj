@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>Pagefind.Net</RootNamespace>
+    <Description>Native .NET Pagefind indexer — generates a Pagefind-compatible search index without the native Rust binary.</Description>
+    <NoWarn>CS1591</NoWarn>
+    <PackageTags>pagefind;search;static-search;index;full-text</PackageTags>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="README.md" />
+    <None Include="..\..\nuget-icon.png" Pack="true" PackagePath="nuget-icon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Pagefind.Net.Tests" />
+    <InternalsVisibleTo Include="Pagefind.Net.E2E.Tests" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Porter2StemmerStandard" />
+    <PackageReference Include="System.Formats.Cbor" />
+  </ItemGroup>
+</Project>

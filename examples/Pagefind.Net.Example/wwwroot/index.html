@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pagefind-net example</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 640px; margin: 2rem auto; padding: 0 1rem; }
+    input { width: 100%; padding: .5rem; font-size: 1rem; box-sizing: border-box; }
+    #results { margin-top: 1rem; }
+    .result { border-bottom: 1px solid #eee; padding: .5rem 0; }
+    .result a { font-weight: bold; text-decoration: none; }
+    .result p { color: #555; margin: .25rem 0 0; font-size: .9rem; }
+  </style>
+</head>
+<body>
+  <h1>pagefind-net example search</h1>
+  <input id="query" type="search" placeholder="Search…" autofocus />
+  <div id="results"></div>
+
+  <script type="module">
+    // pagefind.js is served from the same directory as this index.html.
+    const pagefind = await import('./pagefind/pagefind.js');
+    await pagefind.options({ basePath: './pagefind/' });
+    await pagefind.init();
+
+    // Expose on window so Playwright tests can call it.
+    window.pagefind = pagefind;
+
+    const input = document.getElementById('query');
+    const results = document.getElementById('results');
+
+    input.addEventListener('input', async () => {
+      const query = input.value.trim();
+      if (!query) { results.innerHTML = ''; return; }
+
+      const { results: hits } = await pagefind.search(query);
+      const top = await Promise.all(hits.slice(0, 10).map(h => h.data()));
+
+      results.innerHTML = top.map(r => `
+        <div class="result">
+          <a href="${r.url}">${r.meta?.title ?? r.url}</a>
+          <p>${r.excerpt}</p>
+        </div>
+      `).join('');
+    });
+  </script>
+</body>
+</html>

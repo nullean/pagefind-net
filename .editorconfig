@@ -1,0 +1,77 @@
+root=true
+
+[*]
+charset = utf-8
+indent_style = tab
+indent_size = 4
+# Spell checker configuration
+spelling_exclusion_path = "./build/exclusion.dic"
+
+[*.{fs,fsx,cs,vb}]
+max_line_length = 160
+
+[*.{fs,fsx}]
+indent_style = space
+indent_size = 4
+
+[*.{md,markdown,json,js,yml,yaml,csproj,fsproj,targets,targets,props}]
+indent_style = space
+indent_size = 2
+
+[*.{ts,tsx}]
+indent_style = space
+indent_size = 4
+quote_type = single
+
+# Dotnet code style settings:
+[*.{cs,vb}]
+end_of_line=lf
+trim_trailing_whitespace=true
+insert_final_newline=true
+
+# Sort using and Import directives with System.* appearing first
+dotnet_sort_system_directives_first = true
+
+# Constants always pascal case
+dotnet_naming_rule.constants_should_be_pascal_case.symbols  = consts
+dotnet_naming_rule.constants_should_be_pascal_case.style    = consts
+dotnet_naming_rule.constants_should_be_pascal_case.severity = suggestion
+
+dotnet_naming_symbols.consts.applicable_kinds           = field
+dotnet_naming_symbols.consts.applicable_accessibilities = *
+dotnet_naming_symbols.consts.required_modifiers = const
+
+dotnet_naming_style.consts.capitalization = pascal_case
+
+# Non-public static fields always pascal case
+dotnet_naming_rule.non_public_static_fields_should_be_pascal_case.symbols  = non_public_static_fields
+dotnet_naming_rule.non_public_static_fields_should_be_pascal_case.style    = non_public_static_fields
+dotnet_naming_rule.non_public_static_fields_should_be_pascal_case.severity = suggestion
+
+dotnet_naming_symbols.non_public_static_fields.applicable_kinds           = field
+dotnet_naming_symbols.non_public_static_fields.applicable_accessibilities = private,protected,internal,protected_internal,private_protected
+dotnet_naming_symbols.non_public_static_fields.required_modifiers = static
+
+dotnet_naming_style.non_public_static_fields.capitalization = pascal_case
+
+# Non-private readonly fields are pascal case
+dotnet_naming_rule.non_private_readonly_fields_should_be_pascal_case.severity = suggestion
+dotnet_naming_rule.non_private_readonly_fields_should_be_pascal_case.symbols = non_private_readonly_fields
+dotnet_naming_rule.non_private_readonly_fields_should_be_pascal_case.style = non_private_readonly_fields
+
+dotnet_naming_symbols.non_private_readonly_fields.applicable_kinds = field
+dotnet_naming_symbols.non_private_readonly_fields.applicable_accessibilities = public,protected,internal,protected_internal,private_protected
+dotnet_naming_symbols.non_private_readonly_fields.required_modifiers = readonly
+
+dotnet_naming_style.non_private_readonly_fields.capitalization = pascal_case
+
+# Private instance fields are camel case prefixed underscore
+dotnet_naming_rule.private_fields_should_be_camelcase_prefix_underscore.symbols  = private_fields
+dotnet_naming_rule.private_fields_should_be_camelcase_prefix_underscore.style    = private_fields
+dotnet_naming_rule.private_fields_should_be_camelcase_prefix_underscore.severity = suggestion
+
+dotnet_naming_symbols.private_fields.applicable_kinds           = field
+dotnet_naming_symbols.private_fields.applicable_accessibilities = private
+
+dotnet_naming_style.private_fields.capitalization  = camel_case
+dotnet_naming_style.private_fields.required_prefix = _

@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Pagefind.Net.E2E.Tests</RootNamespace>
+    <Description>Playwright headless browser tests: our index data + npm Pagefind runtime = correct results.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="TUnit" />
+    <PackageReference Include="AwesomeAssertions" />
+    <PackageReference Include="Microsoft.Playwright" />
+    <PackageReference Include="GitHubActionsTestLogger" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Pagefind.Net\Pagefind.Net.csproj" />
+    <ProjectReference Include="..\..\examples\Pagefind.Net.Example\Pagefind.Net.Example.csproj" />
+  </ItemGroup>
+</Project>

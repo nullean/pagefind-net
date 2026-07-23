@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>Configuration</title></head>
+<body data-pagefind-body>
+  <h1>Configuration</h1>
+  <p>
+    The <code>PagefindIndexOptions</code> record controls how the index is built.
+    Pass it to the <code>PagefindIndex</code> constructor.
+  </p>
+
+  <h2 id="language">Language</h2>
+  <p>
+    Set the <code>Language</code> property to a BCP-47 language tag (e.g. <code>"en"</code>).
+    This controls which <code>wasm.*.pagefind</code> file the entry JSON references.
+  </p>
+
+  <h2 id="include-characters">IncludeCharacters</h2>
+  <p>
+    Additional Unicode characters to keep during tokenisation. By default only
+    letters and digits are kept. Add characters such as <code>+</code>, <code>#</code>,
+    or <code>@</code> if they appear in searchable terms in your content.
+  </p>
+
+  <h2 id="weighted-segments">Weighted Segments</h2>
+  <p>
+    Provide <code>WeightedSegments</code> on each record to boost heading terms.
+    Suggested weights: H1 = 7, H2 = 4, H3 = 3, body = 1.
+  </p>
+</body>
+</html>

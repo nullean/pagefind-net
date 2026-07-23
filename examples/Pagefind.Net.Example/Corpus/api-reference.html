@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>API Reference</title></head>
+<body data-pagefind-body>
+  <h1>API Reference</h1>
+  <p>
+    Complete reference for all public types in the <code>Pagefind.Net</code> library.
+  </p>
+
+  <h2 id="pagesfindindex">PagefindIndex</h2>
+  <p>
+    The main entry point. Create one per build, call <code>AddRecord</code> for each
+    document, then <code>WriteAsync</code> to flush the index to disk.
+  </p>
+  <p>
+    <code>PagefindTargetVersion</code> is a constant string matching the Pagefind
+    release version whose binary format this library targets.
+  </p>
+
+  <h2 id="pagefindrecord">PagefindRecord</h2>
+  <p>
+    Represents a single indexable document. Required fields:
+    <code>Url</code>, <code>Title</code>, <code>Content</code>.
+    Optional: <code>WeightedSegments</code>, <code>Anchors</code>, <code>Meta</code>.
+  </p>
+
+  <h2 id="weightedsegment">WeightedSegment</h2>
+  <p>
+    A plain-text string with a relative search weight. Terms in higher-weight segments
+    receive larger weight markers in the CBOR index, boosting BM25 scores.
+  </p>
+
+  <h2 id="pagefindanchor">PagefindAnchor</h2>
+  <p>
+    A heading anchor within a page. The Pagefind JS runtime uses anchors to generate
+    sub-results linking directly to specific headings (e.g. <code>/guide/#installation</code>).
+  </p>
+</body>
+</html>

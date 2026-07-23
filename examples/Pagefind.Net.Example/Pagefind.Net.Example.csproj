@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Pagefind.Net.Example</RootNamespace>
+    <Description>Demonstrates pagefind-net: indexes an HTML corpus and writes the index data files.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Pagefind.Net\Pagefind.Net.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Copy corpus HTML to output so Program.cs can find it at runtime -->
+    <None Include="Corpus\**" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="wwwroot\**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>
