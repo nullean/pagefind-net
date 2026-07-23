@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <RootNamespace>Pagefind.Net.Web</RootNamespace>
+    <Description>ASP.NET example: builds a Pagefind index on startup and serves a search UI.</Description>
+    <PagefindFrontendOutputPath>wwwroot/pagefind</PagefindFrontendOutputPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Pagefind.Net\Pagefind.Net.csproj" />
+    <ProjectReference Include="..\..\src\Pagefind.Net.Frontend\Pagefind.Net.Frontend.csproj" />
+  </ItemGroup>
+  <!-- When consumed as a NuGet package this import happens automatically via the package targets.
+       For ProjectReference during development we import explicitly. -->
+  <Import Project="..\..\src\Pagefind.Net.Frontend\build\Pagefind.Net.Frontend.targets" />
+</Project>

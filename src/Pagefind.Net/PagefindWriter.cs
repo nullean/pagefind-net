@@ -154,33 +154,39 @@ internal static class PagefindWriter
 	/// <summary>
 	/// Encodes weight runs into the Pagefind locs int array.
 	/// For each run: -weight (marker), then delta-encoded positions.
+	/// Pre-calculates exact size to avoid intermediate List allocation.
 	/// </summary>
-	private static int[] BuildLocs(WeightRun[] runs)
+	private static int[] BuildLocs(List<WeightRun> runs)
 	{
-		var result = new List<int>();
+		var totalLen = 0;
+		foreach (var run in runs)
+			totalLen += 1 + run.Positions.Length;
+
+		var result = new int[totalLen];
+		var idx = 0;
 		foreach (var run in runs)
 		{
-			// Negative weight marker (abs value = weight, clamped to 0..255).
-			var weight = (int)Math.Clamp(run.Weight, (byte)1, (byte)255);
-			result.Add(-weight);
+			result[idx++] = -(int)Math.Clamp(run.Weight, (byte)1, (byte)255);
 
-			// Delta-encode positions within this run.
 			var prevPos = 0;
 			foreach (var pos in run.Positions)
 			{
-				result.Add(pos - prevPos);
+				result[idx++] = pos - prevPos;
 				prevPos = pos;
 			}
 		}
-		return [.. result];
+		return result;
 	}
 
 	private static int EstimateWordSize(KeyValuePair<string, List<PagePosting>> entry)
 	{
-		// Rough estimate: word length + (runs * avg positions) * 4 bytes per int.
 		var size = entry.Key.Length;
 		foreach (var p in entry.Value)
-			size += p.Runs.Sum(r => r.Positions.Length + 1) * 4 + 8;
+		{
+			foreach (var r in p.Runs)
+				size += (r.Positions.Length + 1) * 4;
+			size += 8;
+		}
 		return size;
 	}
 

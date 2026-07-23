@@ -1,7 +1,7 @@
 {
-  "name": "pagefind-net-example",
+  "name": "pagefind-net-web-example",
   "version": "1.0.0",
-  "description": "Provides the Pagefind query runtime (pagefind.js + wasm) for the pagefind-net example.",
+  "description": "Provides the Pagefind query runtime (pagefind.js + wasm) for the ASP.NET example.",
   "private": true,
   "scripts": {
     "emit-runtime": "node emit-runtime.mjs"

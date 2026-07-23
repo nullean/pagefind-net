@@ -1,0 +1,42 @@
+<Project>
+  <!--
+    Pagefind.Net.Frontend MSBuild integration.
+
+    Copies pagefind.js and wasm.en.pagefind into the consuming project's
+    pagefind output directory on every build (skips if files are unchanged).
+
+    Properties consumers can set in their .csproj:
+
+      <PagefindFrontendOutputPath>wwwroot/pagefind</PagefindFrontendOutputPath>
+        Relative path (from project dir) where the frontend files are written.
+        Defaults to wwwroot/pagefind.
+
+      <PagefindFrontendDisableExtract>true</PagefindFrontendDisableExtract>
+        Set to true to skip automatic extraction entirely.
+  -->
+
+  <PropertyGroup>
+    <PagefindFrontendOutputPath Condition="'$(PagefindFrontendOutputPath)' == ''">wwwroot/pagefind</PagefindFrontendOutputPath>
+    <!-- Resolve source: NuGet packages expose PkgPackage_Name; for ProjectReference fall back to this file's location -->
+    <_PagefindToolsDir>$(MSBuildThisFileDirectory)..\tools\pagefind\</_PagefindToolsDir>
+    <_PagefindOutputDir>$([System.IO.Path]::GetFullPath('$(PagefindFrontendOutputPath)', '$(MSBuildProjectDirectory)'))</_PagefindOutputDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <_PagefindFrontendFiles Include="$(_PagefindToolsDir)**" />
+  </ItemGroup>
+
+  <Target Name="_ExtractPagefindFrontend"
+          AfterTargets="Build"
+          Condition="'$(PagefindFrontendDisableExtract)' != 'true'"
+          Inputs="@(_PagefindFrontendFiles)"
+          Outputs="@(_PagefindFrontendFiles->'$(_PagefindOutputDir)\%(RecursiveDir)%(Filename)%(Extension)')">
+
+    <MakeDir Directories="$(_PagefindOutputDir)" />
+    <Copy SourceFiles="@(_PagefindFrontendFiles)"
+          DestinationFolder="$(_PagefindOutputDir)"
+          SkipUnchangedFiles="true" />
+    <Message Importance="normal"
+             Text="Pagefind.Net.Frontend: copied pagefind.js + wasm.en.pagefind to $(_PagefindOutputDir)" />
+  </Target>
+</Project>

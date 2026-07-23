@@ -1,4 +1,5 @@
 using System.Buffers;
+using System.Collections.Frozen;
 
 namespace Pagefind.Net;
 
@@ -9,21 +10,23 @@ namespace Pagefind.Net;
 internal static class EnglishPorter2
 {
     // Words that bypass the full algorithm and return a fixed stem.
-    private static readonly (string Word, string Stem)[] Exceptions =
-    [
-        ("skis", "ski"), ("skies", "sky"), ("dying", "die"), ("lying", "lie"),
-        ("tying", "tie"), ("idly", "idl"), ("gently", "gentl"), ("ugly", "ugli"),
-        ("early", "earli"), ("only", "onli"), ("singly", "singl"), ("sky", "sky"),
-        ("news", "news"), ("howe", "howe"), ("atlas", "atlas"), ("cosmos", "cosmos"),
-        ("bias", "bias"), ("andes", "andes"),
-    ];
+    private static readonly FrozenDictionary<string, string> Exceptions =
+        new Dictionary<string, string>
+        {
+            ["skis"] = "ski", ["skies"] = "sky", ["dying"] = "die", ["lying"] = "lie",
+            ["tying"] = "tie", ["idly"] = "idl", ["gently"] = "gentl", ["ugly"] = "ugli",
+            ["early"] = "earli", ["only"] = "onli", ["singly"] = "singl", ["sky"] = "sky",
+            ["news"] = "news", ["howe"] = "howe", ["atlas"] = "atlas", ["cosmos"] = "cosmos",
+            ["bias"] = "bias", ["andes"] = "andes",
+        }.ToFrozenDictionary(StringComparer.Ordinal);
 
     // After step 1a these words stop (no further stemming).
-    private static readonly HashSet<string> Exception2 =
-    [
-        "inning", "outing", "canning", "herring", "earring",
-        "proceed", "exceed", "succeed",
-    ];
+    private static readonly FrozenSet<string> Exception2 =
+        FrozenSet.ToFrozenSet(
+        [
+            "inning", "outing", "canning", "herring", "earring",
+            "proceed", "exceed", "succeed",
+        ], StringComparer.Ordinal);
 
     // Special-case prefixes that fix R1 = prefix.Length.
     private static readonly (string Prefix, int R1)[] R1Prefixes =
@@ -39,14 +42,72 @@ internal static class EnglishPorter2
     private static readonly SearchValues<char> DoubleableChars =
         SearchValues.Create("bdfgmnprt");
 
+    /// <summary>
+    /// Stems <paramref name="word"/> into <paramref name="destination"/>.
+    /// Returns the number of chars written. Destination must be at least
+    /// <paramref name="word"/>.Length chars (stemming never grows a word).
+    /// </summary>
+    internal static int Stem(ReadOnlySpan<char> word, Span<char> destination)
+    {
+        if (word.Length <= 2)
+        {
+            word.CopyTo(destination);
+            return word.Length;
+        }
+
+        var exceptionLookup = Exceptions.GetAlternateLookup<ReadOnlySpan<char>>();
+        if (exceptionLookup.TryGetValue(word, out var exStem))
+        {
+            exStem.AsSpan().CopyTo(destination);
+            return exStem.Length;
+        }
+
+        var buf = ArrayPool<char>.Shared.Rent(word.Length + 1);
+        try
+        {
+            word.CopyTo(buf);
+            var len = word.Length;
+
+            MarkYs(buf, len);
+
+            var r1 = ComputeR1(buf, len);
+            var r2 = GetRegion(buf, len, r1);
+
+            Step0(buf, ref len);
+            Step1a(buf, ref len);
+
+            var ex2Lookup = Exception2.GetAlternateLookup<ReadOnlySpan<char>>();
+            if (ex2Lookup.Contains(new ReadOnlySpan<char>(buf, 0, len)))
+                goto done;
+
+            Step1b(buf, ref len, r1);
+            Step1c(buf, ref len);
+            Step2(buf, ref len, r1);
+            Step3(buf, ref len, r1, r2);
+            Step4(buf, ref len, r2);
+            Step5(buf, ref len, r1, r2);
+
+            done:
+            for (var i = 0; i < len; i++)
+                if (buf[i] == 'Y') buf[i] = 'y';
+
+            new ReadOnlySpan<char>(buf, 0, len).CopyTo(destination);
+            return len;
+        }
+        finally
+        {
+            ArrayPool<char>.Shared.Return(buf);
+        }
+    }
+
     internal static string Stem(string word)
     {
         if (word.Length <= 2) return word;
 
-        foreach (var (w, s) in Exceptions)
-            if (word == w) return s;
+        var exceptionLookup = Exceptions.GetAlternateLookup<ReadOnlySpan<char>>();
+        if (exceptionLookup.TryGetValue(word.AsSpan(), out var exStem))
+            return exStem;
 
-        // Rent a working buffer; the word never grows beyond its original length.
         var buf = ArrayPool<char>.Shared.Rent(word.Length + 1);
         try
         {
@@ -61,7 +122,8 @@ internal static class EnglishPorter2
             Step0(buf, ref len);
             Step1a(buf, ref len);
 
-            if (Exception2.Contains(new string(buf, 0, len)))
+            var ex2Lookup = Exception2.GetAlternateLookup<ReadOnlySpan<char>>();
+            if (ex2Lookup.Contains(new ReadOnlySpan<char>(buf, 0, len)))
                 goto done;
 
             Step1b(buf, ref len, r1);
