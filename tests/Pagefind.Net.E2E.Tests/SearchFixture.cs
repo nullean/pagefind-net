@@ -30,15 +30,11 @@ public sealed class SearchFixture : IAsyncInitializer, IAsyncDisposable
 
 	public async Task InitializeAsync()
 	{
-		// 1. Write pagefind-net data files into a temp dir.
 		_wwwroot = Path.Combine(Path.GetTempPath(), $"pagefind-e2e-{Guid.NewGuid():N}");
 		Directory.CreateDirectory(Path.Combine(_wwwroot, "pagefind"));
 
-		var index = BuildIndex();
-		await index.WriteAsync(_wwwroot, CancellationToken.None);
-
-		// 2. Emit pagefind.js + wasm from npm (requires npm install in example dir).
-		//    Find the example directory relative to the test binary.
+		// 1. Emit pagefind.js + wasm.*.pagefind from npm FIRST.
+		//    writeFiles also emits a dummy index — our .NET data overwrites it next.
 		var exampleDir = FindExampleDir();
 		if (exampleDir is null)
 			throw new InvalidOperationException(
@@ -46,6 +42,11 @@ public sealed class SearchFixture : IAsyncInitializer, IAsyncDisposable
 
 		var pagefindDir = Path.Combine(_wwwroot, "pagefind");
 		await EmitNpmRuntimeAsync(exampleDir, pagefindDir);
+
+		// 2. Write our .NET index data on top (overwrites dummy pagefind-entry.json,
+		//    .pf_meta, index/, fragment/ — keeps pagefind.js + wasm.*.pagefind).
+		var index = BuildIndex();
+		await index.WriteAsync(_wwwroot, CancellationToken.None);
 
 		// Copy the index.html from the example's wwwroot.
 		var srcHtml = Path.Combine(exampleDir, "wwwroot", "index.html");

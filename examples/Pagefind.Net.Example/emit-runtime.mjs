@@ -18,19 +18,20 @@ import { mkdirSync } from 'node:fs';
 const outputDir = resolve(process.argv[2] ?? 'wwwroot/pagefind');
 mkdirSync(outputDir, { recursive: true });
 
-// Create a minimal index — we only want the frontend runtime files.
+// Create a minimal index with language "en" so the emitted wasm file is
+// wasm.en.pagefind — matching the wasm filename our .NET index data references.
 // Pagefind's writeFiles emits pagefind.js + wasm.*.pagefind alongside the data.
 // We will overlay our .NET-generated data files afterwards.
-const { index, errors } = await createIndex({});
+const { index, errors } = await createIndex({ language: 'en' });
 if (errors.length > 0) {
   console.error('Pagefind createIndex errors:', errors);
   process.exit(1);
 }
 
-// Add a dummy page so the index has at least one entry (required to emit wasm).
+// Add a dummy English page so pagefind detects lang="en" and emits wasm.en.pagefind.
 await index.addHTMLFile({
   url: '/_pagefind_bootstrap/',
-  content: '<html><body data-pagefind-body><h1>bootstrap</h1></body></html>',
+  content: '<html lang="en"><body data-pagefind-body><h1>bootstrap</h1></body></html>',
 });
 
 const { errors: writeErrors } = await index.writeFiles({ outputPath: outputDir });

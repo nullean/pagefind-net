@@ -26,7 +26,6 @@ public sealed class SearchTests(SearchFixture fixture)
 		var page = await fixture.BrowserContext!.NewPageAsync();
 		await page.GotoAsync("/");
 
-		// Wait for pagefind.js to initialise.
 		await page.WaitForFunctionAsync("() => typeof window.pagefind !== 'undefined'",
 			null, new() { Timeout = 10_000 });
 

@@ -20,8 +20,8 @@
 
   <script type="module">
     // pagefind.js is served from the same directory as this index.html.
+    // pagefind auto-derives basePath from import.meta.url (the pagefind.js location).
     const pagefind = await import('./pagefind/pagefind.js');
-    await pagefind.options({ basePath: './pagefind/' });
     await pagefind.init();
 
     // Expose on window so Playwright tests can call it.

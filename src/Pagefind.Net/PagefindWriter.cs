@@ -104,17 +104,17 @@ internal static class PagefindWriter
 
 		foreach (var (word, postings) in words)
 		{
-			// Each word entry: [word, postings_data, variants?]
-			// For now omit variants (only added when there are ≥ 3 elements per Pagefind compat).
-			w.WriteStartArray(2);
+			// Each word entry: [word, postings_array, variants]
+			w.WriteStartArray(3);
 			w.WriteTextString(word);
 
-			// Postings are delta-encoded in a flat array:
-			// [delta_page_id, locs_array, meta_locs_array, delta_page_id, ...]
-			w.WriteStartArray(postings.Count * 3);
+			// Postings: array of posting arrays, each [page_delta, locs_array, meta_locs_array].
+			w.WriteStartArray(postings.Count);
 			var prevPageId = 0;
 			foreach (var posting in postings)
 			{
+				w.WriteStartArray(3);
+
 				// Page id: delta from previous (first is absolute).
 				var delta = posting.PageIndex - prevPageId;
 				prevPageId = posting.PageIndex;
@@ -130,8 +130,14 @@ internal static class PagefindWriter
 				// Meta-locs: empty for this implementation.
 				w.WriteStartArray(0);
 				w.WriteEndArray();
+
+				w.WriteEndArray(); // posting
 			}
-			w.WriteEndArray(); // postings flat array
+			w.WriteEndArray(); // postings_array
+
+			// Variants: empty array.
+			w.WriteStartArray(0);
+			w.WriteEndArray();
 
 			w.WriteEndArray(); // word entry
 		}
@@ -218,16 +224,17 @@ internal static class PagefindWriter
 		}
 		w.WriteEndArray();
 
-		// 4. filter_chunks: empty map
-		w.WriteStartMap(0);
-		w.WriteEndMap();
-
-		// 5. sorts: empty map
-		w.WriteStartMap(0);
-		w.WriteEndMap();
-
-		// 6. meta_fields: empty array (no custom meta field declarations)
+		// 4. filter_chunks: empty array (matches pagefind binary output when no filters)
 		w.WriteStartArray(0);
+		w.WriteEndArray();
+
+		// 5. sorts: empty array (matches pagefind binary output when no sort keys)
+		w.WriteStartArray(0);
+		w.WriteEndArray();
+
+		// 6. meta_fields: include "title" (matches pagefind binary output)
+		w.WriteStartArray(1);
+		w.WriteTextString("title");
 		w.WriteEndArray();
 
 		w.WriteEndArray(); // outer
@@ -256,7 +263,7 @@ internal static class PagefindWriter
 				[language] = new LanguageEntry
 				{
 					Hash = metaHash,
-					Wasm = $"wasm.{language}.pagefind",
+					Wasm = language,   // pagefind.js builds: wasm.${wasm}.pagefind
 					PageCount = pageCount,
 				},
 			},

@@ -75,7 +75,7 @@ public sealed class GoldenCorpusTests
 			langs.TryGetProperty("en", out var en).Should().BeTrue();
 			en.TryGetProperty("hash", out _).Should().BeTrue();
 			en.TryGetProperty("wasm", out var wasm).Should().BeTrue();
-			wasm.GetString().Should().Be("wasm.en.pagefind");
+			wasm.GetString().Should().Be("en"); // pagefind.js constructs wasm.${wasm}.pagefind
 		}
 		finally
 		{
