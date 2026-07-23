@@ -14,7 +14,7 @@
     <InternalsVisibleTo Include="Pagefind.Net.E2E.Tests" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Porter2StemmerStandard" />
     <PackageReference Include="System.Formats.Cbor" />
+    <PackageReference Include="System.IO.Abstractions" />
   </ItemGroup>
 </Project>

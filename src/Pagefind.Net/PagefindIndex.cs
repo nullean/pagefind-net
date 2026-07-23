@@ -1,3 +1,5 @@
+using System.IO.Abstractions;
+
 namespace Pagefind.Net;
 
 /// <summary>
@@ -25,11 +27,22 @@ public sealed class PagefindIndex
 	public const string PagefindTargetVersion = "1.5.2";
 
 	private readonly PagefindIndexOptions _options;
+	private readonly IFileSystem _fs;
 	private readonly List<PagefindRecord> _records = [];
 
 	/// <summary>Initialises a new index with the given options.</summary>
-	public PagefindIndex(PagefindIndexOptions? options = null) =>
+	/// <param name="options">Index configuration.</param>
+	/// <param name="fileSystem">
+	/// File-system abstraction to use when writing output files.
+	/// Pass <see langword="null"/> (the default) to use the real file system.
+	/// Inject a custom implementation such as <c>Nullean.ScopedFileSystem</c>
+	/// to sandbox or redirect all writes.
+	/// </param>
+	public PagefindIndex(PagefindIndexOptions? options = null, IFileSystem? fileSystem = null)
+	{
 		_options = options ?? new PagefindIndexOptions();
+		_fs = fileSystem ?? new FileSystem();
+	}
 
 	/// <summary>
 	/// Adds a document to the index. Thread-safe when called from a single
@@ -50,9 +63,9 @@ public sealed class PagefindIndex
 	public async Task WriteAsync(string outputDirectory, CancellationToken ct = default)
 	{
 		var pagefindDir = Path.Combine(outputDirectory, "pagefind");
-		Directory.CreateDirectory(pagefindDir);
-		Directory.CreateDirectory(Path.Combine(pagefindDir, "index"));
-		Directory.CreateDirectory(Path.Combine(pagefindDir, "fragment"));
+		_fs.Directory.CreateDirectory(pagefindDir);
+		_fs.Directory.CreateDirectory(Path.Combine(pagefindDir, "index"));
+		_fs.Directory.CreateDirectory(Path.Combine(pagefindDir, "fragment"));
 
 		// 1. Tokenise and stem every record, building the inverted index.
 		var tokenizer = new Tokenizer(_options.IncludeCharacters);
@@ -73,12 +86,12 @@ public sealed class PagefindIndex
 			var (hash, bytes) = fragmentWriter.BuildFragment(_records[i]);
 			pageHashes[i] = hash;
 			var path = Path.Combine(pagefindDir, "fragment", $"{hash}.pf_fragment");
-			await PagefindWriter.WriteFramedAsync(path, bytes, ct);
+			await PagefindWriter.WriteFramedAsync(_fs, path, bytes, ct);
 		}
 
 		// 3. Write index chunk files.
 		var indexChunks = await PagefindWriter.WriteIndexChunksAsync(
-			pagefindDir, invertedIndex, ct);
+			_fs, pagefindDir, invertedIndex, ct);
 
 		// 4. Write the meta file.
 		var wordCounts = new int[_records.Count];
@@ -92,11 +105,13 @@ public sealed class PagefindIndex
 			indexChunks);
 
 		await PagefindWriter.WriteFramedAsync(
+			_fs,
 			Path.Combine(pagefindDir, $"pagefind.{metaHash}.pf_meta"),
 			metaBytes, ct);
 
 		// 5. Write pagefind-entry.json.
 		await PagefindWriter.WriteEntryJsonAsync(
+			_fs,
 			pagefindDir,
 			_options.Language,
 			metaHash,

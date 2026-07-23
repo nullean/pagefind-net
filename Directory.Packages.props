@@ -7,8 +7,8 @@
   </ItemGroup>
   <ItemGroup>
     <!-- Runtime dependencies -->
-    <PackageVersion Include="Porter2StemmerStandard" Version="1.1.0" />
     <PackageVersion Include="System.Formats.Cbor" Version="10.0.0" />
+    <PackageVersion Include="System.IO.Abstractions" Version="22.0.9" />
   </ItemGroup>
   <ItemGroup>
     <!-- Test dependencies -->

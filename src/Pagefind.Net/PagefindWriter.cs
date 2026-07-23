@@ -1,4 +1,5 @@
 using System.Formats.Cbor;
+using System.IO.Abstractions;
 using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text;
@@ -23,11 +24,11 @@ internal static class PagefindWriter
 	/// <summary>
 	/// Writes a pagefind-framed gzip file: <c>gzip("pagefind_dcd" + body)</c>.
 	/// </summary>
-	internal static async Task WriteFramedAsync(string path, byte[] body, CancellationToken ct)
+	internal static async Task WriteFramedAsync(IFileSystem fs, string path, byte[] body, CancellationToken ct)
 	{
-		await using var fs = new FileStream(path, FileMode.Create, FileAccess.Write,
-			FileShare.None, 65536, useAsync: true);
-		await using var gz = new GZipStream(fs, CompressionLevel.Optimal);
+		await using var fileStream = fs.FileStream.New(path, FileMode.Create, FileAccess.Write,
+			FileShare.None, 65536, FileOptions.Asynchronous);
+		await using var gz = new GZipStream(fileStream, CompressionLevel.Optimal);
 		await gz.WriteAsync(Magic, ct);
 		await gz.WriteAsync(body, ct);
 	}
@@ -35,6 +36,7 @@ internal static class PagefindWriter
 	// ── Index chunks ───────────────────────────────────────────────────────────
 
 	internal static async Task<IndexChunkInfo[]> WriteIndexChunksAsync(
+		IFileSystem fs,
 		string pagefindDir,
 		SortedDictionary<string, List<PagePosting>> invertedIndex,
 		CancellationToken ct)
@@ -53,7 +55,7 @@ internal static class PagefindWriter
 
 			if (bufferSize >= ChunkTargetBytes)
 			{
-				var chunk = await FlushChunkAsync(pagefindDir, wordBuffer, ct);
+				var chunk = await FlushChunkAsync(fs, pagefindDir, wordBuffer, ct);
 				chunks.Add(chunk);
 				wordBuffer.Clear();
 				bufferSize = 0;
@@ -62,7 +64,7 @@ internal static class PagefindWriter
 
 		if (wordBuffer.Count > 0)
 		{
-			var chunk = await FlushChunkAsync(pagefindDir, wordBuffer, ct);
+			var chunk = await FlushChunkAsync(fs, pagefindDir, wordBuffer, ct);
 			chunks.Add(chunk);
 		}
 
@@ -70,6 +72,7 @@ internal static class PagefindWriter
 	}
 
 	private static async Task<IndexChunkInfo> FlushChunkAsync(
+		IFileSystem fs,
 		string pagefindDir,
 		List<KeyValuePair<string, List<PagePosting>>> words,
 		CancellationToken ct)
@@ -79,7 +82,7 @@ internal static class PagefindWriter
 		var hash = Convert.ToHexString(hashBytes)[..8].ToLowerInvariant();
 
 		var path = Path.Combine(pagefindDir, "index", $"{hash}.pf_index");
-		await WriteFramedAsync(path, cbor, ct);
+		await WriteFramedAsync(fs, path, cbor, ct);
 
 		return new IndexChunkInfo(
 			From: words[0].Key,
@@ -248,6 +251,7 @@ internal static class PagefindWriter
 	// ── pagefind-entry.json ────────────────────────────────────────────────────
 
 	internal static async Task WriteEntryJsonAsync(
+		IFileSystem fs,
 		string pagefindDir,
 		string language,
 		string metaHash,
@@ -272,7 +276,7 @@ internal static class PagefindWriter
 
 		var json = JsonSerializer.SerializeToUtf8Bytes(entry, EntrySerializerContext.Default.EntryJson);
 		var path = Path.Combine(pagefindDir, "pagefind-entry.json");
-		await File.WriteAllBytesAsync(path, json, ct);
+		await fs.File.WriteAllBytesAsync(path, json, ct);
 	}
 }
 
