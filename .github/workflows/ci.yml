@@ -76,6 +76,13 @@ jobs:
 
     - run: ./build.sh build -s true
       name: Build
+
+    - name: Install Playwright system dependencies
+      run: pwsh .artifacts/bin/Pagefind.Net.E2E.Tests/release/playwright.ps1 install-deps chromium
+
+    - name: Install Playwright browsers
+      run: pwsh .artifacts/bin/Pagefind.Net.E2E.Tests/release/playwright.ps1 install chromium
+
     - run: ./build.sh test -s true
       name: Test
     - run: ./build.sh generatepackages -s true

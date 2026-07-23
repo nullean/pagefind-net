@@ -1,0 +1,8 @@
+{
+  "name": "pagefind-net-test-fixtures",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "pagefind": "1.5.2"
+  }
+}

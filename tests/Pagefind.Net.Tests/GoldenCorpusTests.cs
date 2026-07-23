@@ -115,7 +115,6 @@ public sealed class GoldenCorpusTests
 	}
 
 	[Test]
-	[Skip("Requires reference-pagefind/ fixture directory — run generate-fixtures.mjs first")]
 	public async Task StructuralParityWithOfficialBinary()
 	{
 		if (!Directory.Exists(ReferenceDir))

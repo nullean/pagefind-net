@@ -53,10 +53,16 @@ internal sealed class Tokenizer
 	// Not an iterator: accumulates into `result` to avoid ReadOnlySpan-across-yield issues.
 	private void ProcessWord(string text, int offset, int length, List<string> result)
 	{
-		// Compound split on '.'.
+		// Compound split on '.': emit the joined form (dots removed) PLUS each sub-part.
+		// This mirrors pagefind's behaviour: "foo.bar" → ["foobar", "foo", "bar"].
 		var dotIdx = text.IndexOf('.', offset, length);
 		if (dotIdx >= 0)
 		{
+			var raw = text.Substring(offset, length).Replace(".", "");
+			var joined = Normalize(raw, 0, raw.Length);
+			if (joined.Length > 0)
+				result.Add(joined);
+
 			var leftLen = dotIdx - offset;
 			if (leftLen > 0)
 				ProcessWord(text, offset, leftLen, result);

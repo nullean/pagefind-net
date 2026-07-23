@@ -47,7 +47,6 @@ public sealed class StemmerTests
 	}
 
 	[Test]
-	[Skip("Run generate-fixtures.mjs to produce stemmer-parity.csv first")]
 	public async Task ParityWithOfficialBinary()
 	{
 		var fixturePath = Path.Combine(AppContext.BaseDirectory, "Fixtures", "stemmer-parity.csv");

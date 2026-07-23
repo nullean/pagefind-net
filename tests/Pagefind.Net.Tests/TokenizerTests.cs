@@ -44,8 +44,9 @@ public sealed class TokenizerTests
 	[Test]
 	public void CompoundSplitOnDot()
 	{
+		// pagefind emits the joined form (dots removed) AND each sub-part.
 		var tokens = Tokenizer.Tokenize("foo.bar baz.qux").ToList();
-		tokens.Should().BeEquivalentTo(["foo", "bar", "baz", "qux"]);
+		tokens.Should().BeEquivalentTo(["foobar", "foo", "bar", "bazqux", "baz", "qux"]);
 	}
 
 	[Test]
@@ -92,7 +93,6 @@ public sealed class TokenizerTests
 	// ── Parity fixture tests (skipped if fixture not yet generated) ────────────
 
 	[Test]
-	[Skip("Run generate-fixtures.mjs to produce tokenizer-parity.json first")]
 	public async Task ParityWithOfficialBinary()
 	{
 		var fixturePath = Path.Combine(AppContext.BaseDirectory, "Fixtures", "tokenizer-parity.json");
@@ -100,7 +100,8 @@ public sealed class TokenizerTests
 			return; // Fixture not yet generated; [Skip] attribute handles this.
 
 		var json = await File.ReadAllTextAsync(fixturePath);
-		var cases = System.Text.Json.JsonSerializer.Deserialize<TokenizerCase[]>(json)!;
+		var opts = new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+		var cases = System.Text.Json.JsonSerializer.Deserialize<TokenizerCase[]>(json, opts)!;
 
 		foreach (var tc in cases)
 		{

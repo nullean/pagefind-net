@@ -1,0 +1,59 @@
+[
+  {
+    "input": "hello world",
+    "expected": [
+      "hello",
+      "world"
+    ]
+  },
+  {
+    "input": "Hello WORLD",
+    "expected": [
+      "hello",
+      "world"
+    ]
+  },
+  {
+    "input": "foo.bar baz",
+    "expected": [
+      "bar",
+      "baz",
+      "foo",
+      "foobar"
+    ]
+  },
+  {
+    "input": "hello! world?",
+    "expected": [
+      "hello",
+      "world"
+    ]
+  },
+  {
+    "input": "hello   world",
+    "expected": [
+      "hello",
+      "world"
+    ]
+  },
+  {
+    "input": "café",
+    "expected": [
+      "cafe"
+    ]
+  },
+  {
+    "input": "html css json",
+    "expected": [
+      "css",
+      "html",
+      "json"
+    ]
+  },
+  {
+    "input": "index",
+    "expected": [
+      "index"
+    ]
+  }
+]
