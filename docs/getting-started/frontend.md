@@ -1,7 +1,3 @@
----
-title: Frontend package
----
-
 # Frontend package
 
 The `Pagefind.Net.Frontend` NuGet package ships the Pagefind browser query runtime: `pagefind.js` and `wasm.en.pagefind`. These files are required for the search UI to work in the browser.

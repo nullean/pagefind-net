@@ -1,7 +1,3 @@
----
-title: PagefindFrontend
----
-
 # PagefindFrontend
 
 Static class that extracts the embedded Pagefind browser runtime (`pagefind.js` and `wasm.en.pagefind`) to a directory on disk.

@@ -1,7 +1,3 @@
----
-title: pagefind-net
----
-
 # pagefind-net
 
 A pure .NET library that generates [Pagefind](https://pagefind.app/)-compatible search indexes. No native binaries, no subprocess, no platform restrictions.

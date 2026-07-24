@@ -1,7 +1,3 @@
----
-title: API reference
----
-
 # API reference
 
 pagefind-net exposes a small, focused API surface across two packages.

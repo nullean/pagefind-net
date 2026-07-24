@@ -1,7 +1,3 @@
----
-title: ASP.NET integration
----
-
 # ASP.NET integration
 
 pagefind-net works well with ASP.NET applications. Build the index at startup (or as a background task) and serve the `pagefind/` directory as static files.

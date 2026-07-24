@@ -1,7 +1,3 @@
----
-title: PagefindIndex
----
-
 # PagefindIndex
 
 `PagefindIndex` accumulates `PagefindRecord` documents and writes a Pagefind-compatible index directory.

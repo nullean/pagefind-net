@@ -1,7 +1,3 @@
----
-title: PagefindRecord, WeightedSegment, PagefindAnchor
----
-
 # PagefindRecord
 
 A single document to be added to the Pagefind index.
