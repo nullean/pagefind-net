@@ -1,0 +1,5 @@
+project: pagefind-net
+toc:
+  - file: index.md
+  - toc: getting-started
+  - toc: api

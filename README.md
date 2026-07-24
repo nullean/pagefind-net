@@ -1,10 +1,22 @@
 # pagefind-net
 
-A native .NET library that generates a [Pagefind](https://pagefind.app/)-compatible search index.
+A pure .NET library that generates [Pagefind](https://pagefind.app/)-compatible search indexes. No native binaries, no subprocess, no platform restrictions -- the entire indexing pipeline runs in managed code.
 
-pagefind-net reimplements the Pagefind **indexer** in .NET, producing the `pagefind/` index data files that the stock Pagefind JS/WASM query runtime can consume. No native binary, no subprocess, no platform restriction.
+| Package | NuGet |
+|---------|-------|
+| **Pagefind.Net** | [![NuGet](https://img.shields.io/nuget/v/Pagefind.Net.svg)](https://www.nuget.org/packages/Pagefind.Net) |
+| **Pagefind.Net.Frontend** | [![NuGet](https://img.shields.io/nuget/v/Pagefind.Net.Frontend.svg)](https://www.nuget.org/packages/Pagefind.Net.Frontend) |
 
-## Usage
+## Quick start
+
+Install both packages:
+
+```shell
+dotnet add package Pagefind.Net
+dotnet add package Pagefind.Net.Frontend
+```
+
+Build an index and let the frontend runtime extract automatically:
 
 ```csharp
 using Pagefind.Net;
@@ -18,9 +30,9 @@ index.AddRecord(new PagefindRecord
     Content = plainTextBody,
     WeightedSegments =
     [
-        new WeightedSegment(h1Text, weight: 7),
-        new WeightedSegment(h2Text, weight: 4),
-        new WeightedSegment(bodyText, weight: 1),
+        new WeightedSegment(h1Text, Weight: 7),
+        new WeightedSegment(h2Text, Weight: 4),
+        new WeightedSegment(bodyText, Weight: 1),
     ],
     Anchors =
     [
@@ -28,19 +40,25 @@ index.AddRecord(new PagefindRecord
     ],
     Meta = new Dictionary<string, string>
     {
-        ["breadcrumbs"] = breadcrumbsJson,
+        ["title"] = "Getting started",
     },
 });
 
-await index.WriteAsync(outputDirectory, cancellationToken);
+await index.WriteAsync("wwwroot", CancellationToken.None);
 ```
 
-`WriteAsync` emits the index **data** files only (`pagefind-entry.json`, `*.pf_meta`, `index/*.pf_index`, `fragment/*.pf_fragment`). The Pagefind query runtime (`pagefind.js`, `wasm.en.pagefind`) must be obtained separately from the [pagefind npm package](https://www.npmjs.com/package/pagefind).
+`WriteAsync` emits the index data files (`pagefind-entry.json`, `*.pf_meta`, `index/*.pf_index`, `fragment/*.pf_fragment`) into `wwwroot/pagefind/`.
+
+The **Pagefind.Net.Frontend** package ships `pagefind.js` and `wasm.en.pagefind` and automatically extracts them into `wwwroot/pagefind/` on build via an MSBuild target. No npm install required.
 
 ## Compatibility
 
 Targets Pagefind version **1.5.2**. The index format is version-pinned; see `PagefindIndex.PagefindTargetVersion`.
 
+## Documentation
+
+Full documentation is available at [nullean.github.io/pagefind-net](https://nullean.github.io/pagefind-net/).
+
 ## License
 
-MIT — see [LICENSE.txt](LICENSE.txt). Third-party notices in [NOTICE.txt](NOTICE.txt).
+MIT -- see [LICENSE.txt](LICENSE.txt). Third-party notices in [NOTICE.txt](NOTICE.txt).
