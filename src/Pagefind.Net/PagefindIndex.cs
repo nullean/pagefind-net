@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.IO.Abstractions;
 
 namespace Pagefind.Net;
@@ -8,10 +9,12 @@ namespace Pagefind.Net;
 /// </summary>
 /// <remarks>
 /// <para>
-/// Each call to <see cref="AddRecord"/> eagerly tokenizes, stems, and indexes
-/// the record, then builds its fragment. The record's <c>Content</c> and
-/// <c>WeightedSegments</c> are <b>not retained</b> after the call returns,
-/// keeping memory usage constant regardless of corpus size.
+/// Each call to <see cref="AddRecord"/> eagerly tokenizes and stems the record
+/// and builds its fragment. Tokenized results are queued and merged into the
+/// inverted index in batches (see <see cref="PagefindIndexOptions.MergeBatchSize"/>),
+/// keeping <see cref="AddRecord"/> lock-free most of the time while bounding
+/// memory to at most one batch of pending results. The record's <c>Content</c>
+/// and <c>WeightedSegments</c> are <b>not retained</b> after the call returns.
 /// </para>
 /// <para>
 /// The output directory will contain the index <em>data</em> files only:
@@ -37,6 +40,9 @@ public sealed class PagefindIndex
 	private readonly InvertedIndexBuilder _builder;
 	private readonly FragmentBuilder _fragmentBuilder = new();
 	private readonly List<IndexedPage> _pages = [];
+	private readonly ConcurrentQueue<PendingPage> _pending = new();
+	private readonly Lock _mergeLock = new();
+	private readonly int _batchSize;
 
 	/// <summary>Initialises a new index with the given options.</summary>
 	/// <param name="options">Index configuration.</param>
@@ -50,19 +56,23 @@ public sealed class PagefindIndex
 	{
 		_options = options ?? new PagefindIndexOptions();
 		_fs = fileSystem ?? new FileSystem();
+		_batchSize = Math.Max(1, _options.MergeBatchSize);
 		var tokenizer = new Tokenizer(_options.IncludeCharacters);
 		var stemmer = new Stemmer(_options.Language);
 		_builder = new InvertedIndexBuilder(tokenizer, stemmer);
 	}
 
 	/// <summary>
-	/// Tokenizes, stems, and indexes the record immediately, then builds its
+	/// Tokenizes, stems, and queues the record for indexing, then builds its
 	/// search fragment. The record's <see cref="PagefindRecord.Content"/> and
 	/// <see cref="PagefindRecord.WeightedSegments"/> are not retained after
 	/// this call returns.
 	/// </summary>
 	/// <remarks>
-	/// Thread-safe when called from a single producer thread;
+	/// Thread-safe: the expensive tokenization and fragment building run
+	/// concurrently without contention. Tokenized results are enqueued
+	/// lock-free and merged into the inverted index in batches of
+	/// <see cref="PagefindIndexOptions.MergeBatchSize"/>.
 	/// <see cref="WriteAsync"/> must not be called concurrently with
 	/// <see cref="AddRecord"/>.
 	/// </remarks>
@@ -75,11 +85,14 @@ public sealed class PagefindIndex
 	{
 		try
 		{
-			var pageIndex = _pages.Count;
-			_builder.AddRecord(pageIndex, record);
+			var tokenized = _builder.Tokenize(record);
 			var (hash, bytes) = _fragmentBuilder.BuildFragment(record);
 			var wordCount = CountWords(record.Content);
-			_pages.Add(new IndexedPage(hash, bytes, wordCount));
+
+			_pending.Enqueue(new PendingPage(tokenized, hash, bytes, wordCount));
+
+			if (_pending.Count >= _batchSize)
+				FlushPending();
 		}
 		catch (Exception ex) when (ex is not PagefindIndexingException)
 		{
@@ -87,11 +100,22 @@ public sealed class PagefindIndex
 		}
 	}
 
+	private void FlushPending()
+	{
+		lock (_mergeLock)
+		{
+			while (_pending.TryDequeue(out var page))
+			{
+				var pageIndex = _pages.Count;
+				_builder.Merge(pageIndex, page.Tokenized);
+				_pages.Add(new IndexedPage(page.FragmentHash, page.FragmentBytes, page.WordCount));
+			}
+		}
+	}
+
 	/// <summary>
-	/// Finalizes the inverted index and writes all data files to
-	/// <paramref name="outputDirectory"/>/pagefind/.
-	/// No tokenization is performed — all CPU-intensive work was done during
-	/// <see cref="AddRecord"/> calls. This method is a pure I/O flush.
+	/// Flushes any remaining pending records, finalizes the inverted index,
+	/// and writes all data files to <paramref name="outputDirectory"/>/pagefind/.
 	/// </summary>
 	/// <param name="outputDirectory">
 	/// Root of the site output (e.g. <c>wwwroot</c>). The index is written to
@@ -100,6 +124,8 @@ public sealed class PagefindIndex
 	/// <param name="ct">Cancellation token.</param>
 	public async Task WriteAsync(string outputDirectory, CancellationToken ct = default)
 	{
+		FlushPending();
+
 		var pagefindDir = Path.Combine(outputDirectory, "pagefind");
 		_fs.Directory.CreateDirectory(pagefindDir);
 		_fs.Directory.CreateDirectory(Path.Combine(pagefindDir, "index"));
@@ -167,6 +193,9 @@ public sealed class PagefindIndex
 		}
 		return count;
 	}
+
+	private readonly record struct PendingPage(
+		TokenizedRecord Tokenized, string FragmentHash, byte[] FragmentBytes, int WordCount);
 
 	/// <summary>
 	/// Lightweight struct holding the pre-computed output for a single page.
