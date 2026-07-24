@@ -8,6 +8,12 @@ namespace Pagefind.Net;
 /// </summary>
 /// <remarks>
 /// <para>
+/// Each call to <see cref="AddRecord"/> eagerly tokenizes, stems, and indexes
+/// the record, then builds its fragment. The record's <c>Content</c> and
+/// <c>WeightedSegments</c> are <b>not retained</b> after the call returns,
+/// keeping memory usage constant regardless of corpus size.
+/// </para>
+/// <para>
 /// The output directory will contain the index <em>data</em> files only:
 /// <c>pagefind-entry.json</c>, <c>pagefind.*.pf_meta</c>,
 /// <c>index/*.pf_index</c>, and <c>fragment/*.pf_fragment</c>.
@@ -28,7 +34,9 @@ public sealed class PagefindIndex
 
 	private readonly PagefindIndexOptions _options;
 	private readonly IFileSystem _fs;
-	private readonly List<PagefindRecord> _records = [];
+	private readonly InvertedIndexBuilder _builder;
+	private readonly FragmentBuilder _fragmentBuilder = new();
+	private readonly List<IndexedPage> _pages = [];
 
 	/// <summary>Initialises a new index with the given options.</summary>
 	/// <param name="options">Index configuration.</param>
@@ -42,18 +50,48 @@ public sealed class PagefindIndex
 	{
 		_options = options ?? new PagefindIndexOptions();
 		_fs = fileSystem ?? new FileSystem();
+		var tokenizer = new Tokenizer(_options.IncludeCharacters);
+		var stemmer = new Stemmer(_options.Language);
+		_builder = new InvertedIndexBuilder(tokenizer, stemmer);
 	}
 
 	/// <summary>
-	/// Adds a document to the index. Thread-safe when called from a single
-	/// producer thread; <see cref="WriteAsync"/> must not be called concurrently
-	/// with <see cref="AddRecord"/>.
+	/// Tokenizes, stems, and indexes the record immediately, then builds its
+	/// search fragment. The record's <see cref="PagefindRecord.Content"/> and
+	/// <see cref="PagefindRecord.WeightedSegments"/> are not retained after
+	/// this call returns.
 	/// </summary>
-	public void AddRecord(PagefindRecord record) => _records.Add(record);
+	/// <remarks>
+	/// Thread-safe when called from a single producer thread;
+	/// <see cref="WriteAsync"/> must not be called concurrently with
+	/// <see cref="AddRecord"/>.
+	/// </remarks>
+	/// <exception cref="PagefindIndexingException">
+	/// Wraps any exception thrown during tokenization or fragment building,
+	/// attaching the record's <see cref="PagefindRecord.Url"/> and
+	/// <see cref="PagefindRecord.Title"/> for error attribution.
+	/// </exception>
+	public void AddRecord(PagefindRecord record)
+	{
+		try
+		{
+			var pageIndex = _pages.Count;
+			_builder.AddRecord(pageIndex, record);
+			var (hash, bytes) = _fragmentBuilder.BuildFragment(record);
+			var wordCount = CountWords(record.Content);
+			_pages.Add(new IndexedPage(hash, bytes, wordCount));
+		}
+		catch (Exception ex) when (ex is not PagefindIndexingException)
+		{
+			throw new PagefindIndexingException(record.Url, record.Title, ex);
+		}
+	}
 
 	/// <summary>
-	/// Builds the full Pagefind index and writes all data files to
+	/// Finalizes the inverted index and writes all data files to
 	/// <paramref name="outputDirectory"/>/pagefind/.
+	/// No tokenization is performed — all CPU-intensive work was done during
+	/// <see cref="AddRecord"/> calls. This method is a pure I/O flush.
 	/// </summary>
 	/// <param name="outputDirectory">
 	/// Root of the site output (e.g. <c>wwwroot</c>). The index is written to
@@ -67,26 +105,17 @@ public sealed class PagefindIndex
 		_fs.Directory.CreateDirectory(Path.Combine(pagefindDir, "index"));
 		_fs.Directory.CreateDirectory(Path.Combine(pagefindDir, "fragment"));
 
-		// 1. Tokenise and stem every record, building the inverted index.
-		var tokenizer = new Tokenizer(_options.IncludeCharacters);
-		var stemmer = new Stemmer(_options.Language);
-		var builder = new InvertedIndexBuilder(tokenizer, stemmer);
+		// 1. Finalize the inverted index (sort postings — no tokenization).
+		var invertedIndex = _builder.Build();
 
-		for (var i = 0; i < _records.Count; i++)
-			builder.AddRecord(i, _records[i]);
-
-		var invertedIndex = builder.Build();
-
-		// 2. Write fragment files.
-		var fragmentWriter = new FragmentBuilder();
-		var pageHashes = new string[_records.Count];
-		for (var i = 0; i < _records.Count; i++)
+		// 2. Write pre-built fragment files.
+		var pageHashes = new string[_pages.Count];
+		for (var i = 0; i < _pages.Count; i++)
 		{
 			ct.ThrowIfCancellationRequested();
-			var (hash, bytes) = fragmentWriter.BuildFragment(_records[i]);
-			pageHashes[i] = hash;
-			var path = Path.Combine(pagefindDir, "fragment", $"{hash}.pf_fragment");
-			await PagefindWriter.WriteFramedAsync(_fs, path, bytes, ct);
+			pageHashes[i] = _pages[i].FragmentHash;
+			var path = Path.Combine(pagefindDir, "fragment", $"{pageHashes[i]}.pf_fragment");
+			await PagefindWriter.WriteFramedAsync(_fs, path, _pages[i].FragmentBytes, ct);
 		}
 
 		// 3. Write index chunk files.
@@ -94,9 +123,9 @@ public sealed class PagefindIndex
 			_fs, pagefindDir, invertedIndex, ct);
 
 		// 4. Write the meta file.
-		var wordCounts = new int[_records.Count];
-		for (var i = 0; i < _records.Count; i++)
-			wordCounts[i] = CountWords(_records[i].Content);
+		var wordCounts = new int[_pages.Count];
+		for (var i = 0; i < _pages.Count; i++)
+			wordCounts[i] = _pages[i].WordCount;
 
 		var (metaHash, metaBytes) = PagefindWriter.BuildMetaCbor(
 			PagefindTargetVersion,
@@ -115,7 +144,7 @@ public sealed class PagefindIndex
 			pagefindDir,
 			_options.Language,
 			metaHash,
-			_records.Count,
+			_pages.Count,
 			_options.IncludeCharacters,
 			ct);
 	}
@@ -138,4 +167,10 @@ public sealed class PagefindIndex
 		}
 		return count;
 	}
+
+	/// <summary>
+	/// Lightweight struct holding the pre-computed output for a single page.
+	/// The original <see cref="PagefindRecord"/> is not retained.
+	/// </summary>
+	private readonly record struct IndexedPage(string FragmentHash, byte[] FragmentBytes, int WordCount);
 }
