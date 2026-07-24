@@ -16,13 +16,15 @@ public sealed class InvertedIndexTests
 	public void SingleWordSinglePage()
 	{
 		var builder = new InvertedIndexBuilder(Tokenizer, Stemmer);
-		builder.AddRecord(0, new PagefindRecord
+		var record = new PagefindRecord
 		{
 			Url = "/a/",
 			Title = "A",
 			Content = "hello world",
 			WeightedSegments = [new WeightedSegment("hello world", Weight: 1)],
-		});
+		};
+		var tokenized = builder.Tokenize(record);
+		builder.Merge(0, tokenized);
 
 		var index = builder.Build();
 		// "hello" and "world" should appear; stemmed forms may differ.
@@ -34,17 +36,17 @@ public sealed class InvertedIndexTests
 	public void MultiPageDeltaEncoding()
 	{
 		var builder = new InvertedIndexBuilder(Tokenizer, Stemmer);
-		builder.AddRecord(0, new PagefindRecord
+		AddRecord(builder, 0, new PagefindRecord
 		{
 			Url = "/a/", Title = "A", Content = "search engine",
 			WeightedSegments = [new WeightedSegment("search engine", Weight: 1)],
 		});
-		builder.AddRecord(1, new PagefindRecord
+		AddRecord(builder, 1, new PagefindRecord
 		{
 			Url = "/b/", Title = "B", Content = "search results",
 			WeightedSegments = [new WeightedSegment("search results", Weight: 1)],
 		});
-		builder.AddRecord(2, new PagefindRecord
+		AddRecord(builder, 2, new PagefindRecord
 		{
 			Url = "/c/", Title = "C", Content = "search query",
 			WeightedSegments = [new WeightedSegment("search query", Weight: 1)],
@@ -64,7 +66,7 @@ public sealed class InvertedIndexTests
 	public void WeightBoostFromSegments()
 	{
 		var builder = new InvertedIndexBuilder(Tokenizer, Stemmer);
-		builder.AddRecord(0, new PagefindRecord
+		AddRecord(builder, 0, new PagefindRecord
 		{
 			Url = "/a/", Title = "A", Content = "search engine",
 			WeightedSegments =
@@ -92,7 +94,7 @@ public sealed class InvertedIndexTests
 	public void WordsAreSortedAlphabetically()
 	{
 		var builder = new InvertedIndexBuilder(Tokenizer, Stemmer);
-		builder.AddRecord(0, new PagefindRecord
+		AddRecord(builder, 0, new PagefindRecord
 		{
 			Url = "/a/", Title = "A", Content = "zebra apple mango",
 			WeightedSegments = [new WeightedSegment("zebra apple mango", Weight: 1)],
@@ -101,5 +103,11 @@ public sealed class InvertedIndexTests
 		var index = builder.Build();
 		var keys = index.Keys.ToList();
 		keys.Should().BeInAscendingOrder();
+	}
+
+	private static void AddRecord(InvertedIndexBuilder builder, int pageIndex, PagefindRecord record)
+	{
+		var tokenized = builder.Tokenize(record);
+		builder.Merge(pageIndex, tokenized);
 	}
 }

@@ -37,6 +37,7 @@ public sealed class PagefindIndex
 	private readonly InvertedIndexBuilder _builder;
 	private readonly FragmentBuilder _fragmentBuilder = new();
 	private readonly List<IndexedPage> _pages = [];
+	private readonly Lock _mergeLock = new();
 
 	/// <summary>Initialises a new index with the given options.</summary>
 	/// <param name="options">Index configuration.</param>
@@ -62,7 +63,9 @@ public sealed class PagefindIndex
 	/// this call returns.
 	/// </summary>
 	/// <remarks>
-	/// Thread-safe when called from a single producer thread;
+	/// Thread-safe: the expensive tokenization and fragment building run
+	/// concurrently without contention. Only the final merge into the shared
+	/// index is serialized via a lock.
 	/// <see cref="WriteAsync"/> must not be called concurrently with
 	/// <see cref="AddRecord"/>.
 	/// </remarks>
@@ -75,11 +78,18 @@ public sealed class PagefindIndex
 	{
 		try
 		{
-			var pageIndex = _pages.Count;
-			_builder.AddRecord(pageIndex, record);
+			// CPU-heavy work outside the lock — runs fully concurrent.
+			var tokenized = _builder.Tokenize(record);
 			var (hash, bytes) = _fragmentBuilder.BuildFragment(record);
 			var wordCount = CountWords(record.Content);
-			_pages.Add(new IndexedPage(hash, bytes, wordCount));
+
+			// Only the merge into shared state is serialized.
+			lock (_mergeLock)
+			{
+				var pageIndex = _pages.Count;
+				_builder.Merge(pageIndex, tokenized);
+				_pages.Add(new IndexedPage(hash, bytes, wordCount));
+			}
 		}
 		catch (Exception ex) when (ex is not PagefindIndexingException)
 		{

@@ -18,17 +18,18 @@ internal sealed class InvertedIndexBuilder
 		_stemmer = stemmer;
 	}
 
-	internal void AddRecord(int pageIndex, PagefindRecord record)
+	/// <summary>
+	/// CPU-heavy tokenization and stemming — no shared state is accessed.
+	/// Safe to call concurrently from multiple threads.
+	/// </summary>
+	internal TokenizedRecord Tokenize(PagefindRecord record)
 	{
 		// Phase 1: Tokenize Content to establish canonical positions.
-		// Positions in the index must correspond to word offsets in Content
-		// because the fragment stores Content and the frontend uses positions for excerpts.
 		var contentWords = new Dictionary<string, List<int>>(StringComparer.Ordinal);
 		var contentSink = new IndexTokenSink(contentWords, _stemmer, 0);
 		_tokenizer.Tokenize(record.Content.AsSpan(), ref contentSink);
 
 		// Phase 2: Determine which words appear in higher-weight segments.
-		// These get boosted weights but don't introduce new positions.
 		var boostedWords = new Dictionary<string, byte>(StringComparer.Ordinal);
 		foreach (var segment in record.WeightedSegments)
 		{
@@ -44,10 +45,18 @@ internal sealed class InvertedIndexBuilder
 			}
 		}
 
-		// Phase 3: Merge into the global index with appropriate weights.
-		foreach (var (word, positions) in contentWords)
+		return new TokenizedRecord(contentWords, boostedWords);
+	}
+
+	/// <summary>
+	/// Merges pre-tokenized data into the shared inverted index.
+	/// Caller must ensure exclusive access (e.g. via a lock).
+	/// </summary>
+	internal void Merge(int pageIndex, TokenizedRecord tokenized)
+	{
+		foreach (var (word, positions) in tokenized.ContentWords)
 		{
-			var weight = boostedWords.TryGetValue(word, out var boost) ? boost : (byte)1;
+			var weight = tokenized.BoostedWords.TryGetValue(word, out var boost) ? boost : (byte)1;
 
 			if (!_index.TryGetValue(word, out var postings))
 				_index[word] = postings = [];
@@ -154,6 +163,19 @@ internal sealed class InvertedIndexBuilder
 				_words.Add(new string(stemmed));
 		}
 	}
+}
+
+/// <summary>
+/// Holds the result of tokenizing a single record.
+/// Produced by <see cref="InvertedIndexBuilder.Tokenize"/> (no shared state),
+/// consumed by <see cref="InvertedIndexBuilder.Merge"/> (under lock).
+/// </summary>
+internal sealed class TokenizedRecord(
+	Dictionary<string, List<int>> contentWords,
+	Dictionary<string, byte> boostedWords)
+{
+	internal Dictionary<string, List<int>> ContentWords { get; } = contentWords;
+	internal Dictionary<string, byte> BoostedWords { get; } = boostedWords;
 }
 
 /// <summary>One page's postings for a given word.</summary>
