@@ -61,7 +61,7 @@ public sealed class InvertedIndexTests
 	}
 
 	[Test]
-	public void WeightRunsArePreserved()
+	public void WeightBoostFromSegments()
 	{
 		var builder = new InvertedIndexBuilder(Tokenizer, Stemmer);
 		builder.AddRecord(0, new PagefindRecord
@@ -69,18 +69,23 @@ public sealed class InvertedIndexTests
 			Url = "/a/", Title = "A", Content = "search engine",
 			WeightedSegments =
 			[
-				new WeightedSegment("search", Weight: 7),  // H1 weight
-				new WeightedSegment("search engine", Weight: 1),  // body
+				new WeightedSegment("search", Weight: 7),  // H1 weight boosts "search"
+				new WeightedSegment("search engine", Weight: 1),  // body (not used for positions)
 			],
 		});
 
 		var index = builder.Build();
 		var postings = index["search"];
 		postings.Should().HaveCount(1);
-		// Should have two runs: one at weight 7 and one at weight 1.
-		postings[0].Runs.Should().HaveCount(2);
+		// One run: positions from Content, weight boosted to 7 by the heading segment.
+		postings[0].Runs.Should().HaveCount(1);
 		postings[0].Runs[0].Weight.Should().Be(7);
-		postings[0].Runs[1].Weight.Should().Be(1);
+		postings[0].Runs[0].Positions.Should().BeEquivalentTo([0]);
+
+		// "engine" only appears in Content at weight 1 (no boost segment).
+		var enginePostings = index["engin"]; // stemmed form
+		enginePostings[0].Runs[0].Weight.Should().Be(1);
+		enginePostings[0].Runs[0].Positions.Should().BeEquivalentTo([1]);
 	}
 
 	[Test]

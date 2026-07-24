@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Pagefind.Net.Web": {
+      "commandName": "Project",
+      "applicationUrl": "http://localhost:5200"
+    }
+  }
+}

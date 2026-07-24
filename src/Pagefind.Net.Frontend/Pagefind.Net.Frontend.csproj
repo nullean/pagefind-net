@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>Pagefind.Net.Frontend</RootNamespace>
+    <Description>Ships the Pagefind browser query runtime (pagefind.js + wasm) as embedded resources with an MSBuild task that extracts them on build.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.IO.Abstractions" />
+  </ItemGroup>
+
+  <!-- Embed the gzipped frontend assets (for the C# ExtractToAsync API) -->
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\pagefind.js.gz" LogicalName="pagefind.js.gz" />
+    <EmbeddedResource Include="Resources\wasm.en.pagefind.gz" LogicalName="wasm.en.pagefind.gz" />
+  </ItemGroup>
+
+  <!-- Ship MSBuild targets + raw assets to consumers via NuGet -->
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="README.md" />
+    <None Include="..\..\nuget-icon.png" Pack="true" PackagePath="nuget-icon.png" />
+    <None Include="build\Pagefind.Net.Frontend.targets" Pack="true" PackagePath="build\" />
+    <None Include="buildTransitive\Pagefind.Net.Frontend.targets" Pack="true" PackagePath="buildTransitive\" />
+    <None Include="tools\pagefind\**" Pack="true" PackagePath="tools\pagefind\" />
+  </ItemGroup>
+</Project>

@@ -37,8 +37,8 @@ foreach (var htmlFile in Directory.EnumerateFiles(corpusDir, "*.html"))
 await index.WriteAsync(wwwroot, CancellationToken.None);
 
 Console.WriteLine($"Index written to: {pagefindDir}");
-Console.WriteLine("Now copy the pagefind.js + wasm assets from the npm pagefind package");
-Console.WriteLine("into the same directory, then serve wwwroot/ over HTTP.");
+Console.WriteLine("Frontend runtime (pagefind.js + wasm) was extracted by the build via Pagefind.Net.Frontend.");
+Console.WriteLine("Serve wwwroot/ over HTTP to use the search UI.");
 return 0;
 
 // ── Corpus parser ─────────────────────────────────────────────────────────────

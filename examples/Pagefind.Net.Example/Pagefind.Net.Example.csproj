@@ -3,13 +3,17 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>Pagefind.Net.Example</RootNamespace>
     <Description>Demonstrates pagefind-net: indexes an HTML corpus and writes the index data files.</Description>
+    <PagefindFrontendOutputPath>wwwroot/pagefind</PagefindFrontendOutputPath>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Pagefind.Net\Pagefind.Net.csproj" />
+    <ProjectReference Include="..\..\src\Pagefind.Net.Frontend\Pagefind.Net.Frontend.csproj" />
   </ItemGroup>
   <ItemGroup>
     <!-- Copy corpus HTML to output so Program.cs can find it at runtime -->
     <None Include="Corpus\**" CopyToOutputDirectory="PreserveNewest" />
     <None Include="wwwroot\**" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
+  <!-- Import targets for ProjectReference (NuGet consumers get this automatically) -->
+  <Import Project="..\..\src\Pagefind.Net.Frontend\build\Pagefind.Net.Frontend.targets" />
 </Project>

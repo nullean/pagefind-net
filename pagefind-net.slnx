@@ -15,6 +15,7 @@
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/Pagefind.Net/Pagefind.Net.csproj" />
+    <Project Path="src/Pagefind.Net.Frontend/Pagefind.Net.Frontend.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Pagefind.Net.Tests/Pagefind.Net.Tests.csproj" />
@@ -23,5 +24,6 @@
   <Folder Name="/examples/">
     <Project Path="examples/Pagefind.Net.Example/Pagefind.Net.Example.csproj" />
     <Project Path="examples/Pagefind.Net.Smoketest/Pagefind.Net.Smoketest.csproj" />
+    <Project Path="examples/Pagefind.Net.Web/Pagefind.Net.Web.csproj" />
   </Folder>
 </Solution>

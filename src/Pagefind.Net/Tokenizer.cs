@@ -5,6 +5,23 @@ using System.Text;
 namespace Pagefind.Net;
 
 /// <summary>
+/// Callback interface for the push-based tokeniser. Implementors receive
+/// each normalised token as a span — no string is allocated by the tokeniser.
+/// </summary>
+internal interface ITokenSink
+{
+    void OnToken(scoped ReadOnlySpan<char> token);
+
+    /// <summary>
+    /// Called once per whitespace-delimited word in the source text, BEFORE any
+    /// tokens from that word are emitted. This lets consumers track positions
+    /// by source word (as pagefind's frontend does for excerpt highlighting)
+    /// rather than by emitted token count.
+    /// </summary>
+    void OnWordBoundary() { }
+}
+
+/// <summary>
 /// Reproduces Pagefind's <c>get_indexable_words</c> tokenisation pipeline so
 /// that .NET-generated tokens match those produced by the WASM query-time
 /// tokeniser (which re-runs the same algorithm on search queries).
@@ -22,62 +39,68 @@ internal sealed class Tokenizer
         _includeChars = SearchValues.Create(includeCharacters.AsSpan());
 
     /// <summary>
-    /// Tokenises <paramref name="text"/> exactly as Pagefind would, returning
-    /// lower-cased, diacritic-normalised, stemmer-ready word tokens.
+    /// Push-based tokenisation: each normalised token is delivered to
+    /// <paramref name="sink"/> as a <see cref="ReadOnlySpan{T}"/> with zero
+    /// per-token string allocations.
     /// </summary>
-    internal IEnumerable<string> Tokenize(string text)
+    internal void Tokenize<TSink>(ReadOnlySpan<char> text, ref TSink sink)
+        where TSink : ITokenSink, allows ref struct
     {
-        if (string.IsNullOrEmpty(text))
-            return [];
+        if (text.IsEmpty)
+            return;
 
-        var result = new List<string>();
+        Span<char> normBuf = stackalloc char[256];
+
         var start = 0;
         for (var i = 0; i <= text.Length; i++)
         {
             if (i == text.Length || char.IsWhiteSpace(text[i]))
             {
                 if (i > start)
-                    ProcessWord(text.AsSpan(start, i - start), result);
+                {
+                    sink.OnWordBoundary();
+                    ProcessWord(text[start..i], ref sink, normBuf);
+                }
                 start = i + 1;
             }
         }
-        return result;
     }
 
-    // Handles one whitespace-delimited token; emits into `result`.
-    private void ProcessWord(ReadOnlySpan<char> word, List<string> result)
+
+    private void ProcessWord<TSink>(ReadOnlySpan<char> word, ref TSink sink, scoped Span<char> normBuf)
+        where TSink : ITokenSink, allows ref struct
     {
         var dotIdx = word.IndexOf('.');
         if (dotIdx >= 0)
         {
             // Compound split on '.': emit joined form (dots removed) PLUS each sub-part.
             // This mirrors pagefind's behaviour: "foo.bar" → ["foobar", "foo", "bar"].
-            var joined = NormalizeNoDot(word);
-            if (joined.Length > 0) result.Add(joined);
+            var joinedLen = NormalizeNoDot(word, normBuf);
+            if (joinedLen > 0) sink.OnToken(normBuf[..joinedLen]);
 
             var left = word[..dotIdx];
-            if (left.Length > 0) ProcessWord(left, result);
+            if (left.Length > 0) ProcessWord(left, ref sink, normBuf);
 
             var right = word[(dotIdx + 1)..];
-            if (right.Length > 0) ProcessWord(right, result);
+            if (right.Length > 0) ProcessWord(right, ref sink, normBuf);
             return;
         }
 
-        var normalized = Normalize(word);
-        if (normalized.Length > 0) result.Add(normalized);
+        var len = Normalize(word, normBuf);
+        if (len > 0) sink.OnToken(normBuf[..len]);
     }
 
-    // Normalize a span that is known to contain no dots.
-    private string Normalize(ReadOnlySpan<char> word)
+    // Normalize a span that is known to contain no dots. Writes result into output.
+    private int Normalize(ReadOnlySpan<char> word, Span<char> output)
     {
-        var buf = ArrayPool<char>.Shared.Rent(word.Length * 2); // extra for NFD expansion
+        var buf = ArrayPool<char>.Shared.Rent(word.Length * 2);
         try
         {
             var len = CopyLoweredStripped(word, buf, stripDots: false);
-            if (len == 0) return string.Empty;
+            if (len == 0) return 0;
 
             var nfd = new string(buf, 0, len).Normalize(NormalizationForm.FormD);
-            return StripNonSpacingMarks(nfd.AsSpan(), _includeChars);
+            return StripNonSpacingMarks(nfd.AsSpan(), _includeChars, output);
         }
         finally
         {
@@ -86,16 +109,16 @@ internal sealed class Tokenizer
     }
 
     // Normalize and also strip dots (used for the joined compound form).
-    private string NormalizeNoDot(ReadOnlySpan<char> word)
+    private int NormalizeNoDot(ReadOnlySpan<char> word, Span<char> output)
     {
         var buf = ArrayPool<char>.Shared.Rent(word.Length * 2);
         try
         {
             var len = CopyLoweredStripped(word, buf, stripDots: true);
-            if (len == 0) return string.Empty;
+            if (len == 0) return 0;
 
             var nfd = new string(buf, 0, len).Normalize(NormalizationForm.FormD);
-            return StripNonSpacingMarks(nfd.AsSpan(), _includeChars);
+            return StripNonSpacingMarks(nfd.AsSpan(), _includeChars, output);
         }
         finally
         {
@@ -117,25 +140,19 @@ internal sealed class Tokenizer
     }
 
     // Remove NFD non-spacing marks (diacritics) and chars that are not letters/digits/includeChars.
-    private static string StripNonSpacingMarks(ReadOnlySpan<char> nfd, SearchValues<char> includeChars)
+    // Writes into output span, returns length written.
+    private static int StripNonSpacingMarks(ReadOnlySpan<char> nfd, SearchValues<char> includeChars, Span<char> output)
     {
-        var buf = ArrayPool<char>.Shared.Rent(nfd.Length);
-        try
+        var len = 0;
+        foreach (var c in nfd)
         {
-            var len = 0;
-            foreach (var c in nfd)
-            {
-                if (CharUnicodeInfo.GetUnicodeCategory(c) == UnicodeCategory.NonSpacingMark)
-                    continue;
-                if (!char.IsLetterOrDigit(c) && !includeChars.Contains(c))
-                    continue;
-                buf[len++] = c;
-            }
-            return len > 0 ? new string(buf, 0, len) : string.Empty;
+            if (CharUnicodeInfo.GetUnicodeCategory(c) == UnicodeCategory.NonSpacingMark)
+                continue;
+            if (!char.IsLetterOrDigit(c) && !includeChars.Contains(c))
+                continue;
+            output[len++] = c;
         }
-        finally
-        {
-            ArrayPool<char>.Shared.Return(buf);
-        }
+        return len;
     }
+
 }
