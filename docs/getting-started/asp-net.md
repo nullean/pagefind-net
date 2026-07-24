@@ -52,7 +52,7 @@ The required mappings:
 
 ## Frontend runtime
 
-With `Pagefind.Net.Frontend` installed, the MSBuild target copies `pagefind.js` and `wasm.en.pagefind` into `wwwroot/pagefind/` on build. The project file just needs a package reference:
+With `Pagefind.Net.Frontend` installed, the MSBuild target automatically copies `pagefind.js` and `wasm.en.pagefind` into `wwwroot/pagefind/` on every build. The project file just needs a package reference:
 
 ```xml
 <ItemGroup>
@@ -61,15 +61,27 @@ With `Pagefind.Net.Frontend` installed, the MSBuild target copies `pagefind.js` 
 </ItemGroup>
 ```
 
-When using `ProjectReference` during development (instead of NuGet), import the targets file manually:
+The `.targets` file shipped in the `build/` and `buildTransitive/` folders of the NuGet package is imported automatically by MSBuild — no manual `<Import>` element is needed.
+
+To customise the output directory, set the `PagefindFrontendOutputPath` property:
 
 ```xml
-<Import Project="..\..\src\Pagefind.Net.Frontend\build\Pagefind.Net.Frontend.targets" />
+<PropertyGroup>
+  <PagefindFrontendOutputPath>wwwroot/pagefind</PagefindFrontendOutputPath>
+</PropertyGroup>
+```
+
+To disable automatic extraction entirely (e.g. in test projects):
+
+```xml
+<PropertyGroup>
+  <PagefindFrontendDisableExtract>true</PagefindFrontendDisableExtract>
+</PropertyGroup>
 ```
 
 ## HTML search page
 
-Include a minimal search UI in your `wwwroot/index.html`:
+Include a minimal search UI in your `wwwroot/index.html`. Note that `pagefind.js` is an ES module and must be loaded with `import()`:
 
 ```html
 <!DOCTYPE html>
@@ -82,13 +94,15 @@ Include a minimal search UI in your `wwwroot/index.html`:
   <input type="text" id="search" placeholder="Search..." />
   <div id="results"></div>
 
-  <script src="/pagefind/pagefind.js"></script>
-  <script>
+  <script type="module">
+    const pagefind = await import('/pagefind/pagefind.js');
+    await pagefind.init();
+
     const input = document.getElementById('search');
     const results = document.getElementById('results');
     input.addEventListener('input', async () => {
-      const search = await window.__pagefind__.search(input.value);
-      const data = await Promise.all(search.results.map(r => r.data()));
+      const { results: hits } = await pagefind.search(input.value);
+      const data = await Promise.all(hits.slice(0, 10).map(r => r.data()));
       results.innerHTML = data.map(d =>
         `<a href="${d.url}">${d.meta.title}</a><p>${d.excerpt}</p>`
       ).join('');
