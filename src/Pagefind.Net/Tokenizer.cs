@@ -70,24 +70,41 @@ internal sealed class Tokenizer
     private void ProcessWord<TSink>(ReadOnlySpan<char> word, ref TSink sink, scoped Span<char> normBuf)
         where TSink : ITokenSink, allows ref struct
     {
-        var dotIdx = word.IndexOf('.');
-        if (dotIdx >= 0)
+        // Ensure the output buffer can hold the normalized result.
+        // After NFD + StripNonSpacingMarks the output is typically ≤ word.Length,
+        // but we need headroom for intermediate NFD expansion of certain ligatures.
+        char[]? rented = null;
+        if (word.Length > normBuf.Length)
         {
-            // Compound split on '.': emit joined form (dots removed) PLUS each sub-part.
-            // This mirrors pagefind's behaviour: "foo.bar" → ["foobar", "foo", "bar"].
-            var joinedLen = NormalizeNoDot(word, normBuf);
-            if (joinedLen > 0) sink.OnToken(normBuf[..joinedLen]);
-
-            var left = word[..dotIdx];
-            if (left.Length > 0) ProcessWord(left, ref sink, normBuf);
-
-            var right = word[(dotIdx + 1)..];
-            if (right.Length > 0) ProcessWord(right, ref sink, normBuf);
-            return;
+            rented = ArrayPool<char>.Shared.Rent(word.Length * 2);
+            normBuf = rented.AsSpan();
         }
+        try
+        {
+            var dotIdx = word.IndexOf('.');
+            if (dotIdx >= 0)
+            {
+                // Compound split on '.': emit joined form (dots removed) PLUS each sub-part.
+                // This mirrors pagefind's behaviour: "foo.bar" → ["foobar", "foo", "bar"].
+                var joinedLen = NormalizeNoDot(word, normBuf);
+                if (joinedLen > 0) sink.OnToken(normBuf[..joinedLen]);
 
-        var len = Normalize(word, normBuf);
-        if (len > 0) sink.OnToken(normBuf[..len]);
+                var left = word[..dotIdx];
+                if (left.Length > 0) ProcessWord(left, ref sink, normBuf);
+
+                var right = word[(dotIdx + 1)..];
+                if (right.Length > 0) ProcessWord(right, ref sink, normBuf);
+                return;
+            }
+
+            var len = Normalize(word, normBuf);
+            if (len > 0) sink.OnToken(normBuf[..len]);
+        }
+        finally
+        {
+            if (rented is not null)
+                ArrayPool<char>.Shared.Return(rented);
+        }
     }
 
     // Normalize a span that is known to contain no dots. Writes result into output.
@@ -150,6 +167,8 @@ internal sealed class Tokenizer
                 continue;
             if (!char.IsLetterOrDigit(c) && !includeChars.Contains(c))
                 continue;
+            if (len >= output.Length)
+                break;
             output[len++] = c;
         }
         return len;

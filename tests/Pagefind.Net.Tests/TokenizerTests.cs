@@ -90,6 +90,36 @@ public sealed class TokenizerTests
 		tokens.Should().BeEquivalentTo(["hello"]);
 	}
 
+	[Test]
+	public void LongWordExceedingStackBuffer()
+	{
+		// Words longer than the 256-char stackalloc normBuf must not throw IndexOutOfRangeException.
+		var longWord = new string('a', 300);
+		var tokens = Tokenizer.Tokenize(longWord).ToList();
+		tokens.Should().BeEquivalentTo([longWord]);
+	}
+
+	[Test]
+	public void LongWordWithDotsExceedingStackBuffer()
+	{
+		// Compound dot-split on a long word must also handle buffer growth.
+		var left = new string('b', 200);
+		var right = new string('c', 200);
+		var input = $"{left}.{right}";
+		var tokens = Tokenizer.Tokenize(input).ToList();
+		tokens.Should().BeEquivalentTo([$"{left}{right}", left, right]);
+	}
+
+	[Test]
+	public void LongWordWithDiacriticsExceedingStackBuffer()
+	{
+		// Diacritics cause NFD expansion; ensure no overflow on long accented words.
+		var longAccented = string.Concat(Enumerable.Repeat("é", 300));
+		var tokens = Tokenizer.Tokenize(longAccented).ToList();
+		var expected = new string('e', 300);
+		tokens.Should().BeEquivalentTo([expected]);
+	}
+
 	// ── Parity fixture tests (skipped if fixture not yet generated) ────────────
 
 	[Test]
