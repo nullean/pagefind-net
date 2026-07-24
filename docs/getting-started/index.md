@@ -78,4 +78,4 @@ The `ByteLocation` is the byte offset of the anchor text within `Content` (UTF-8
 
 - [Frontend package](frontend.md) -- how the JS/WASM runtime is delivered
 - [ASP.NET integration](asp-net.md) -- serving a Pagefind index from ASP.NET
-- [API reference](../api/index.md) -- full type documentation
+- [API reference](../reference/index.md) -- full type documentation

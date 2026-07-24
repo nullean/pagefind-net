@@ -44,4 +44,4 @@ index.AddRecord(new PagefindRecord
 await index.WriteAsync("wwwroot");
 ```
 
-See [Getting started](getting-started/index.md) for installation and integration guides, or jump to the [API reference](api/index.md).
+See [Getting started](getting-started/index.md) for installation and integration guides, or jump to the [API reference](reference/index.md).
