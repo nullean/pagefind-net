@@ -1,4 +1,8 @@
 project: pagefind-net
+
+branding:
+  icon: assets/logo.svg
+
 toc:
   - file: index.md
   - toc: getting-started
