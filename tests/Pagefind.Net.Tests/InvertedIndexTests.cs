@@ -105,6 +105,54 @@ public sealed class InvertedIndexTests
 		keys.Should().BeInAscendingOrder();
 	}
 
+	[Test]
+	public async Task ConcurrentAddRecordDoesNotCorruptIndex()
+	{
+		const int recordCount = 10_000;
+
+		var fs = new System.IO.Abstractions.TestingHelpers.MockFileSystem();
+		var index = new PagefindIndex(
+			new PagefindIndexOptions { Language = "en" },
+			fs);
+
+		var records = new PagefindRecord[recordCount];
+		for (var i = 0; i < recordCount; i++)
+		{
+			records[i] = new PagefindRecord
+			{
+				Url = $"/page-{i}/",
+				Title = $"Page {i}",
+				Content = $"search result number {i} with some extra words to index properly",
+				WeightedSegments =
+				[
+					new WeightedSegment($"Page {i}", Weight: 7),
+					new WeightedSegment($"search result number {i} with some extra words to index properly", Weight: 1),
+				],
+			};
+		}
+
+		Parallel.ForEach(records, record => index.AddRecord(record));
+
+		await index.WriteAsync("/output", CancellationToken.None);
+
+		var pagefindDir = "/output/pagefind";
+		fs.File.Exists($"{pagefindDir}/pagefind-entry.json").Should().BeTrue();
+		fs.Directory.GetFiles($"{pagefindDir}", "*.pf_meta").Should().HaveCount(1);
+		fs.Directory.GetFiles($"{pagefindDir}/fragment", "*.pf_fragment")
+			.Should().HaveCount(recordCount, $"one fragment per record ({recordCount})");
+		fs.Directory.GetFiles($"{pagefindDir}/index", "*.pf_index")
+			.Should().NotBeEmpty("at least one index chunk is expected");
+
+		var entryJson = fs.File.ReadAllText($"{pagefindDir}/pagefind-entry.json");
+		using var doc = System.Text.Json.JsonDocument.Parse(entryJson);
+		var pageCount = doc.RootElement
+			.GetProperty("languages")
+			.GetProperty("en")
+			.GetProperty("page_count")
+			.GetInt32();
+		pageCount.Should().Be(recordCount);
+	}
+
 	private static void AddRecord(InvertedIndexBuilder builder, int pageIndex, PagefindRecord record)
 	{
 		var tokenized = builder.Tokenize(record);

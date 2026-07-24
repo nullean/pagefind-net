@@ -9,6 +9,7 @@
     <!-- Runtime dependencies -->
     <PackageVersion Include="System.Formats.Cbor" Version="10.0.0" />
     <PackageVersion Include="System.IO.Abstractions" Version="22.0.9" />
+    <PackageVersion Include="System.IO.Abstractions.TestingHelpers" Version="22.0.9" />
   </ItemGroup>
   <ItemGroup>
     <!-- Test dependencies -->
