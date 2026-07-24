@@ -2,7 +2,7 @@
 
 A pure .NET library that generates [Pagefind](https://pagefind.app/)-compatible search indexes. No native binaries, no subprocess, no platform restrictions.
 
-pagefind-net reimplements the Pagefind indexer in managed .NET code, producing the same `pagefind/` directory structure that the stock Pagefind JS/WASM query runtime consumes.
+pagefind-net reimplements the Pagefind indexer in managed .NET code. It produces the same `pagefind/` directory structure that the stock Pagefind JS/WASM query runtime consumes.
 
 ## Packages
 
@@ -14,7 +14,7 @@ pagefind-net reimplements the Pagefind indexer in managed .NET code, producing t
 
 ## Features
 
-- Pure managed .NET -- no native Rust binary, no Node.js dependency
+- Pure managed .NET - no native Rust binary, no Node.js dependency
 - AOT-compatible and trimming-safe
 - Zero-allocation tokeniser and stemmer hot paths
 - Produces indexes byte-compatible with Pagefind 1.5.2

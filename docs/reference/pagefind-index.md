@@ -44,12 +44,15 @@ public async Task WriteAsync(string outputDirectory, CancellationToken ct = defa
 Builds the full index and writes all data files to `{outputDirectory}/pagefind/`.
 
 Output files:
-- `pagefind-entry.json` -- entry point for the JS runtime
-- `pagefind.{hash}.pf_meta` -- page metadata (CBOR, framed)
-- `index/{hash}.pf_index` -- inverted index chunks (CBOR, framed)
-- `fragment/{hash}.pf_fragment` -- content fragments for excerpts (CBOR, framed)
 
+- `pagefind-entry.json` - entry point for the JS runtime
+- `pagefind.{hash}.pf_meta` - page metadata (CBOR, framed)
+- `index/{hash}.pf_index` - inverted index chunks (CBOR, framed)
+- `fragment/{hash}.pf_fragment` - content fragments for excerpts (CBOR, framed)
+
+:::{note}
 The `pagefind/` subdirectory is created if it does not exist.
+:::
 
 ## PagefindIndexOptions
 

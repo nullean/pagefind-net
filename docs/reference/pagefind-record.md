@@ -44,7 +44,9 @@ public readonly record struct WeightedSegment(string Text, byte Weight);
 
 Terms appearing in higher-weight segments receive larger weight markers in the CBOR index, boosting their BM25 score at query time.
 
+:::{important}
 Always include at least one segment covering the full body text with weight 1. List heading segments before body segments so their positions are recorded first.
+:::
 
 ## PagefindAnchor
 
@@ -60,7 +62,10 @@ public readonly record struct PagefindAnchor(string ElementId, string Text, int 
 | `Text` | The visible text of the heading. |
 | `ByteLocation` | Byte offset of this anchor's text within `Content` (UTF-8). |
 
-The Pagefind JS runtime uses anchors to construct URLs with fragment identifiers (e.g. `/guide/#introduction`) and to highlight the relevant section in search results.
+The Pagefind JS runtime uses anchors to:
+
+- Construct URLs with fragment identifiers (e.g. `/guide/#introduction`)
+- Highlight the relevant section in search results
 
 ## Example
 

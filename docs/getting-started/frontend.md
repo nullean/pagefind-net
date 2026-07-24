@@ -12,7 +12,9 @@ wwwroot/pagefind/
   wasm.en.pagefind
 ```
 
+:::{tip}
 No configuration is needed for the default setup. The index data files written by `PagefindIndex.WriteAsync` go into the same directory.
+:::
 
 ### Changing the output path
 
@@ -48,7 +50,9 @@ string[] written = await PagefindFrontend.ExtractToAsync("wwwroot/pagefind");
 string[] written = await PagefindFrontend.ExtractToAsync("wwwroot/pagefind", force: true);
 ```
 
+:::{note}
 A version marker file (`.pagefind-net-frontend-version`) is written alongside the assets. On subsequent calls, extraction is skipped if the marker matches the current package version and all expected files exist.
+:::
 
 An overload accepting `IFileSystem` (from `System.IO.Abstractions`) is available for unit testing.
 

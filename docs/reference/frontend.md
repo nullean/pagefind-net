@@ -33,7 +33,9 @@ Extracts the frontend runtime files into `outputDirectory`. Returns the list of 
 | `force` | When `true`, always overwrite existing files. |
 | `ct` | Cancellation token. |
 
+:::{note}
 A version marker file (`.pagefind-net-frontend-version`) is written alongside the assets. On subsequent calls, extraction is skipped when the marker matches the current package version and all expected files exist.
+:::
 
 ### ExtractToAsync (IFileSystem overload)
 

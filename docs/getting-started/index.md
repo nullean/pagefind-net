@@ -2,14 +2,26 @@
 
 ## Installation
 
-Add both packages to your project:
+:::::{tab-set}
 
+::::{tab-item} .NET CLI
 ```shell
 dotnet add package Pagefind.Net
 dotnet add package Pagefind.Net.Frontend
 ```
+::::
 
-`Pagefind.Net` provides the indexer. `Pagefind.Net.Frontend` ships the browser query runtime and extracts it automatically on build.
+::::{tab-item} Package Manager
+```shell
+Install-Package Pagefind.Net
+Install-Package Pagefind.Net.Frontend
+```
+::::
+
+:::::
+
+- `Pagefind.Net` provides the indexer.
+- `Pagefind.Net.Frontend` ships the browser query runtime and extracts it automatically on build.
 
 ## Building your first index
 
@@ -47,7 +59,7 @@ This writes the following files into `wwwroot/pagefind/`:
 
 ## Weighted segments
 
-Weighted segments control how different parts of a document affect search ranking. Higher weights boost terms in headings or keywords:
+Weighted segments control how different parts of a document affect search ranking. Higher weights boost terms in headings or keywords.
 
 ```csharp
 WeightedSegments =
@@ -58,7 +70,9 @@ WeightedSegments =
 ],
 ```
 
+:::{important}
 Always include a weight-1 segment covering the full body text.
+:::
 
 ## Sub-page anchors
 
@@ -72,10 +86,12 @@ Anchors =
 ],
 ```
 
+:::{note}
 The `ByteLocation` is the byte offset of the anchor text within `Content` (UTF-8 encoded).
+:::
 
 ## Next steps
 
-- [Frontend package](frontend.md) -- how the JS/WASM runtime is delivered
-- [ASP.NET integration](asp-net.md) -- serving a Pagefind index from ASP.NET
-- [API reference](../reference/index.md) -- full type documentation
+- [Frontend package](frontend.md) - how the JS/WASM runtime is delivered
+- [ASP.NET integration](asp-net.md) - serving a Pagefind index from ASP.NET
+- [API reference](../reference/index.md) - full type documentation

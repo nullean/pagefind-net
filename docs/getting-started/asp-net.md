@@ -35,7 +35,9 @@ app.Run();
 
 ## Custom MIME types
 
+:::{warning}
 ASP.NET's static file middleware does not recognize Pagefind's file extensions by default. Without registering them, the browser receives 404 responses when `pagefind.js` tries to load index chunks.
+:::
 
 The required mappings:
 
@@ -57,7 +59,9 @@ With `Pagefind.Net.Frontend` installed, the MSBuild target automatically copies 
 </ItemGroup>
 ```
 
-The `.targets` file shipped in the `build/` and `buildTransitive/` folders of the NuGet package is imported automatically by MSBuild — no manual `<Import>` element is needed.
+:::{note}
+The `.targets` file shipped in the `build/` and `buildTransitive/` folders of the NuGet package is imported automatically by MSBuild. No manual `<Import>` element is needed.
+:::
 
 To customise the output directory, set the `PagefindFrontendOutputPath` property:
 
@@ -67,17 +71,21 @@ To customise the output directory, set the `PagefindFrontendOutputPath` property
 </PropertyGroup>
 ```
 
-To disable automatic extraction entirely (e.g. in test projects):
-
+:::{dropdown} Disabling automatic extraction (e.g. in test projects)
 ```xml
 <PropertyGroup>
   <PagefindFrontendDisableExtract>true</PagefindFrontendDisableExtract>
 </PropertyGroup>
 ```
+:::
 
 ## HTML search page
 
-Include a minimal search UI in your `wwwroot/index.html`. Note that `pagefind.js` is an ES module and must be loaded with `import()`:
+Include a minimal search UI in your `wwwroot/index.html`.
+
+:::{note}
+`pagefind.js` is an ES module and must be loaded with `import()`.
+:::
 
 ```html
 <!DOCTYPE html>
