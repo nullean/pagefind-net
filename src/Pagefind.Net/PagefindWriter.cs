@@ -156,30 +156,52 @@ internal static class PagefindWriter
 
 	/// <summary>
 	/// Encodes weight runs into the Pagefind locs int array.
-	/// For each run: -(weight+1) marker, then delta-encoded positions.
-	/// The marker formula matches the official Pagefind binary:
-	/// <c>-(weight as i32) - 1</c> in Rust.
+	/// Flattens all runs into (weight, position) pairs, sorts by weight
+	/// (ascending, matching pagefind's sort with weight 25 as sort key 0)
+	/// then by position, and emits weight change markers + delta positions.
 	/// </summary>
 	private static int[] BuildLocs(List<WeightRun> runs)
 	{
-		var totalLen = 0;
+		// Flatten all runs into individual (weight, position) pairs and sort.
+		var pairs = new List<(byte Weight, int Position)>();
 		foreach (var run in runs)
-			totalLen += 1 + run.Positions.Length;
-
-		var result = new int[totalLen];
-		var idx = 0;
-		foreach (var run in runs)
-		{
-			result[idx++] = -(int)run.Weight - 1;
-
-			var prevPos = 0;
 			foreach (var pos in run.Positions)
+				pairs.Add((run.Weight, pos));
+
+		// Sort by weight (ascending, with 25 mapped to 0 for first position)
+		// then by position — matching pagefind's positions_to_packed_page sort.
+		pairs.Sort((a, b) =>
+		{
+			var wa = a.Weight == 25 ? 0 : a.Weight;
+			var wb = b.Weight == 25 ? 0 : b.Weight;
+			var cmp = wa.CompareTo(wb);
+			return cmp != 0 ? cmp : a.Position.CompareTo(b.Position);
+		});
+
+		// Encode: current_weight starts at 25 (sentinel, matching pagefind).
+		// Every weight change emits -(weight+1) marker + absolute position.
+		// Same-weight positions emit delta from previous.
+		var result = new List<int>(pairs.Count * 2);
+		var currentWeight = (byte)25; // pagefind sentinel
+		var lastPosition = 0;
+
+		foreach (var (weight, position) in pairs)
+		{
+			if (weight != currentWeight)
 			{
-				result[idx++] = pos - prevPos;
-				prevPos = pos;
+				result.Add(-(int)weight - 1);
+				result.Add(position);
+				lastPosition = position;
+				currentWeight = weight;
+			}
+			else
+			{
+				result.Add(position - lastPosition);
+				lastPosition = position;
 			}
 		}
-		return result;
+
+		return [.. result];
 	}
 
 	/// <summary>

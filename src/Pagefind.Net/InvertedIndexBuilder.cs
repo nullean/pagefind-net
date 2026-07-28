@@ -46,68 +46,52 @@ internal sealed class InvertedIndexBuilder
 			}
 		}
 
-		// Phase 3: Merge primary tokens into the global index with appropriate weights.
+		// Phase 3: Merge primary tokens into the global index.
+		// When PositionWeights is provided (AddHtmlRecord), use per-position weights.
+		// Otherwise, use the max-weight-per-word from WeightedSegments.
 		foreach (var (word, positions) in contentWords)
 		{
-			var weight = wordWeights.TryGetValue(word, out var w) ? w : (byte)0;
-
-			if (!_index.TryGetValue(word, out var postings))
-				_index[word] = postings = [];
-
-			var found = false;
-			for (var i = 0; i < postings.Count; i++)
+			if (record.PositionWeights is not null)
 			{
-				if (postings[i].PageIndex == pageIndex)
+				// Per-position weights: group positions by their weight, create a run per group.
+				var grouped = new Dictionary<byte, List<int>>();
+				foreach (var pos in positions)
 				{
-					postings[i].Runs.Add(new WeightRun(weight, [.. positions]));
-					found = true;
-					break;
+					var posWeight = pos < record.PositionWeights.Length ? record.PositionWeights[pos] : (byte)0;
+					if (!grouped.TryGetValue(posWeight, out var list))
+						grouped[posWeight] = list = [];
+					list.Add(pos);
 				}
+				AddGroupedRuns(pageIndex, word, grouped);
 			}
-
-			if (!found)
-				postings.Add(new PagePosting(pageIndex, [new WeightRun(weight, [.. positions])]));
+			else
+			{
+				var weight = wordWeights.TryGetValue(word, out var w) ? w : (byte)0;
+				AddRun(pageIndex, word, weight, positions);
+			}
 		}
 
 		// Phase 3b: Merge compound parts with reduced weight.
 		// partial_weight = max(1, base_weight / compound_count) per pagefind behaviour.
 		foreach (var (word, positions) in compoundPositions)
 		{
-			var baseWeight = wordWeights.TryGetValue(word, out var bw) ? bw : (byte)0;
-
-			// Group positions by their partial weight
-			var weightedPositions = new Dictionary<byte, List<int>>();
+			var grouped = new Dictionary<byte, List<int>>();
 			foreach (var pos in positions)
 			{
+				var baseWeight = record.PositionWeights is not null && pos < record.PositionWeights.Length
+					? record.PositionWeights[pos]
+					: wordWeights.TryGetValue(word, out var bw) ? bw : (byte)0;
+
 				var compoundCount = compoundCountAtPosition.GetValueOrDefault(pos, 1);
 				var partialWeight = baseWeight > 0 && compoundCount > 0
 					? (byte)Math.Max(1, baseWeight / compoundCount)
 					: (byte)0;
 
-				if (!weightedPositions.TryGetValue(partialWeight, out var posList))
-					weightedPositions[partialWeight] = posList = [];
+				if (!grouped.TryGetValue(partialWeight, out var posList))
+					grouped[partialWeight] = posList = [];
 				posList.Add(pos);
 			}
-
-			foreach (var (weight, posList) in weightedPositions)
-			{
-				if (!_index.TryGetValue(word, out var postings))
-					_index[word] = postings = [];
-
-				var found = false;
-				for (var i = 0; i < postings.Count; i++)
-				{
-					if (postings[i].PageIndex == pageIndex)
-					{
-						postings[i].Runs.Add(new WeightRun(weight, [.. posList]));
-						found = true;
-						break;
-					}
-				}
-
-				if (!found)
-					postings.Add(new PagePosting(pageIndex, [new WeightRun(weight, [.. posList])]));
-			}
+			AddGroupedRuns(pageIndex, word, grouped);
 		}
 
 		// Phase 4: Index meta field values (e.g. meta.title) into metaLocs.
@@ -151,6 +135,28 @@ internal sealed class InvertedIndexBuilder
 				existing.MetaRuns.Add(new MetaFieldRun(fieldIdx, [.. positions]));
 			}
 		}
+	}
+
+	private void AddRun(int pageIndex, string word, byte weight, List<int> positions)
+	{
+		if (!_index.TryGetValue(word, out var postings))
+			_index[word] = postings = [];
+
+		var existing = postings.FirstOrDefault(p => p.PageIndex == pageIndex);
+		if (existing is not null)
+		{
+			existing.Runs.Add(new WeightRun(weight, [.. positions]));
+		}
+		else
+		{
+			postings.Add(new PagePosting(pageIndex, [new WeightRun(weight, [.. positions])]));
+		}
+	}
+
+	private void AddGroupedRuns(int pageIndex, string word, Dictionary<byte, List<int>> grouped)
+	{
+		foreach (var (weight, posList) in grouped)
+			AddRun(pageIndex, word, weight, posList);
 	}
 
 	/// <summary>

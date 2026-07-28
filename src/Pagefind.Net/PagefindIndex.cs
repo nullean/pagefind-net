@@ -108,7 +108,7 @@ public sealed class PagefindIndex
 		var content = BuildContent(page.Sections);
 		var title = FindTitle(page);
 		var anchors = BuildAnchors(page.Sections, content);
-		var segments = BuildSegments(page.Sections, content);
+		var positionWeights = BuildPositionWeights(page.Sections);
 
 		var meta = new Dictionary<string, string>(page.Meta);
 		if (!meta.ContainsKey("title"))
@@ -119,10 +119,11 @@ public sealed class PagefindIndex
 			Url = page.Url,
 			Title = title,
 			Content = content,
-			WeightedSegments = segments,
+			WeightedSegments = [], // Not used — PositionWeights provides per-position weights
 			Anchors = anchors,
 			Meta = meta,
 			Filters = page.Filters,
+			PositionWeights = positionWeights,
 		};
 
 		AddRecord(record);
@@ -136,14 +137,16 @@ public sealed class PagefindIndex
 			if (string.IsNullOrWhiteSpace(section.Text))
 				continue;
 			if (sb.Length > 0)
-				sb.Append(". ");
+			{
+				var lastChar = sb[sb.Length - 1];
+				if (lastChar is '.' or '!' or '?')
+					sb.Append(' ');
+				else
+					sb.Append(". ");
+			}
 			sb.Append(section.Text);
 		}
-		// Ensure trailing period if content doesn't end with one (matching pagefind).
-		var result = sb.ToString();
-		if (result.Length > 0 && !result.EndsWith('.'))
-			result += '.';
-		return result;
+		return sb.ToString();
 	}
 
 	private static string FindTitle(HtmlPageData page)
@@ -178,7 +181,7 @@ public sealed class PagefindIndex
 
 			if (isHeading && section.ElementId is not null)
 			{
-				anchors.Add(new PagefindAnchor(section.ElementId, section.Text, wordOffset));
+				anchors.Add(new PagefindAnchor(section.ElementId, section.Text, wordOffset, section.Tag));
 			}
 
 			wordOffset += CountWords(section.Text);
@@ -187,10 +190,9 @@ public sealed class PagefindIndex
 		return anchors;
 	}
 
-	private static IReadOnlyList<WeightedSegment> BuildSegments(
-		IReadOnlyList<HtmlSection> sections, string content)
+	private static byte[] BuildPositionWeights(IReadOnlyList<HtmlSection> sections)
 	{
-		var segments = new List<WeightedSegment>();
+		var weights = new List<byte>();
 
 		foreach (var section in sections)
 		{
@@ -198,13 +200,12 @@ public sealed class PagefindIndex
 				continue;
 
 			var weight = PagefindWeights.ForTag(section.Tag);
-			segments.Add(new WeightedSegment(section.Text, weight));
+			var wordCount = CountWords(section.Text);
+			for (var i = 0; i < wordCount; i++)
+				weights.Add(weight);
 		}
 
-		// Add the full content as a body-weight segment.
-		segments.Add(new WeightedSegment(content, PagefindWeights.Body));
-
-		return segments;
+		return [.. weights];
 	}
 
 	/// <summary>

@@ -29,9 +29,10 @@ internal sealed class FragmentBuilder
 			Anchors = record.Anchors
 				.Select(a => new FragmentAnchor
 				{
-					Element = a.ElementId,
+					Element = string.IsNullOrEmpty(a.Tag) ? "a" : a.Tag,
+					Id = a.ElementId,
 					Text = a.Text,
-					Location = a.ByteLocation,
+					Location = a.Location,
 				})
 				.ToArray(),
 		};
@@ -94,6 +95,9 @@ internal sealed class FragmentAnchor
 {
 	[JsonPropertyName("element")]
 	public required string Element { get; init; }
+
+	[JsonPropertyName("id")]
+	public string? Id { get; init; }
 
 	[JsonPropertyName("text")]
 	public required string Text { get; init; }
