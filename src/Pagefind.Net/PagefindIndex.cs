@@ -89,7 +89,7 @@ public sealed class PagefindIndex
 			var (hash, bytes) = _fragmentBuilder.BuildFragment(record);
 			var wordCount = CountWords(record.Content);
 
-			_pending.Enqueue(new PendingPage(tokenized, hash, bytes, wordCount));
+			_pending.Enqueue(new PendingPage(tokenized, record, hash, bytes, wordCount));
 
 			if (_pending.Count >= _batchSize)
 				FlushPending();
@@ -107,10 +107,96 @@ public sealed class PagefindIndex
 			while (_pending.TryDequeue(out var page))
 			{
 				var pageIndex = _pages.Count;
-				_builder.Merge(pageIndex, page.Tokenized);
+				_builder.Merge(pageIndex, page.Tokenized, page.Record);
 				_pages.Add(new IndexedPage(page.FragmentHash, page.FragmentBytes, page.WordCount));
 			}
 		}
+	}
+
+	/// <summary>
+	/// Converts an <see cref="HtmlPageData"/> into a <see cref="PagefindRecord"/>
+	/// with per-position weights matching the official Pagefind binary, then indexes it.
+	/// </summary>
+	public void AddHtmlRecord(HtmlPageData page)
+	{
+		var content = BuildContent(page.Sections);
+		var title = FindTitle(page);
+		var anchors = BuildAnchors(page.Sections, content);
+		var positionWeights = BuildPositionWeights(page.Sections);
+
+		var meta = new Dictionary<string, string>(page.Meta);
+		if (!meta.ContainsKey("title"))
+			meta["title"] = title;
+
+		var record = new PagefindRecord
+		{
+			Url = page.Url,
+			Title = title,
+			Content = content,
+			WeightedSegments = [],
+			Anchors = anchors,
+			Meta = meta,
+			Filters = page.Filters,
+			PositionWeights = positionWeights,
+		};
+
+		AddRecord(record);
+	}
+
+	private static string BuildContent(IReadOnlyList<HtmlSection> sections)
+	{
+		var sb = new System.Text.StringBuilder();
+		foreach (var section in sections)
+		{
+			if (string.IsNullOrWhiteSpace(section.Text)) continue;
+			if (sb.Length > 0)
+			{
+				var lastChar = sb[sb.Length - 1];
+				if (lastChar is '.' or '!' or '?') sb.Append(' ');
+				else sb.Append(". ");
+			}
+			sb.Append(section.Text);
+		}
+		return sb.ToString();
+	}
+
+	private static string FindTitle(HtmlPageData page)
+	{
+		if (page.Meta.TryGetValue("title", out var title) && !string.IsNullOrWhiteSpace(title))
+			return title;
+		foreach (var section in page.Sections)
+			if (section.Tag.Equals("h1", StringComparison.OrdinalIgnoreCase))
+				return section.Text;
+		return "";
+	}
+
+	private static IReadOnlyList<PagefindAnchor> BuildAnchors(IReadOnlyList<HtmlSection> sections, string content)
+	{
+		var anchors = new List<PagefindAnchor>();
+		var wordOffset = 0;
+		foreach (var section in sections)
+		{
+			if (string.IsNullOrWhiteSpace(section.Text)) continue;
+			var isHeading = section.Tag.Length == 2 && section.Tag[0] is 'h' or 'H' && section.Tag[1] is >= '1' and <= '6';
+			if (isHeading && section.ElementId is not null)
+				anchors.Add(new PagefindAnchor(section.ElementId, section.Text, wordOffset, section.Tag));
+			wordOffset += CountWords(section.Text);
+		}
+		return anchors;
+	}
+
+	private static byte[] BuildPositionWeights(IReadOnlyList<HtmlSection> sections)
+	{
+		var weights = new List<byte>();
+		foreach (var section in sections)
+		{
+			if (string.IsNullOrWhiteSpace(section.Text)) continue;
+			var weight = PagefindWeights.ForTag(section.Tag);
+			var wordCount = CountWords(section.Text);
+			for (var i = 0; i < wordCount; i++)
+				weights.Add(weight);
+		}
+		return [.. weights];
 	}
 
 	/// <summary>
@@ -195,7 +281,7 @@ public sealed class PagefindIndex
 	}
 
 	private readonly record struct PendingPage(
-		TokenizedRecord Tokenized, string FragmentHash, byte[] FragmentBytes, int WordCount);
+		TokenizedRecord Tokenized, PagefindRecord Record, string FragmentHash, byte[] FragmentBytes, int WordCount);
 
 	/// <summary>
 	/// Lightweight struct holding the pre-computed output for a single page.

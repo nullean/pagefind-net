@@ -24,7 +24,7 @@ public sealed class InvertedIndexTests
 			WeightedSegments = [new WeightedSegment("hello world", Weight: 1)],
 		};
 		var tokenized = builder.Tokenize(record);
-		builder.Merge(0, tokenized);
+		builder.Merge(0, tokenized, record);
 
 		var index = builder.Build();
 		// "hello" and "world" should appear; stemmed forms may differ.
@@ -156,6 +156,6 @@ public sealed class InvertedIndexTests
 	private static void AddRecord(InvertedIndexBuilder builder, int pageIndex, PagefindRecord record)
 	{
 		var tokenized = builder.Tokenize(record);
-		builder.Merge(pageIndex, tokenized);
+		builder.Merge(pageIndex, tokenized, record);
 	}
 }

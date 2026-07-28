@@ -1,0 +1,71 @@
+[
+  {
+    "url": "/api-reference/",
+    "content": "API Reference. Full reference for PagefindIndex, PagefindRecord, WeightedSegment, PagefindAnchor. PagefindIndex. Main entry point. Call AddRecord then WriteAsync. PagefindRecord. Represents a single indexable document with Url, Title, Content.",
+    "word_count": 27,
+    "filters": {},
+    "meta": {
+      "title": "API Reference"
+    },
+    "anchors": [
+      {
+        "element": "h2",
+        "id": "pagefindindex",
+        "text": "PagefindIndex",
+        "location": 9
+      },
+      {
+        "element": "h2",
+        "id": "pagefindrecord",
+        "text": "PagefindRecord",
+        "location": 17
+      }
+    ]
+  },
+  {
+    "url": "/configuration/",
+    "content": "Configuration. Configure PagefindIndexOptions: Language, IncludeCharacters, WeightedSegments. Language. Set Language to a BCP-47 language tag such as en. IncludeCharacters. Additional characters to keep during tokenisation.",
+    "word_count": 24,
+    "filters": {},
+    "meta": {
+      "title": "Configuration"
+    },
+    "anchors": [
+      {
+        "element": "h2",
+        "id": "language",
+        "text": "Language",
+        "location": 6
+      },
+      {
+        "element": "h2",
+        "id": "include-characters",
+        "text": "IncludeCharacters",
+        "location": 17
+      }
+    ]
+  },
+  {
+    "url": "/getting-started/",
+    "content": "Getting Started. Welcome to pagefind-net. Install the NuGet package and call WriteAsync. Installation. Run: dotnet add package Pagefind.Net. Quickstart. Create a PagefindIndex and add records.",
+    "word_count": 25,
+    "filters": {},
+    "meta": {
+      "title": "Getting Started"
+    },
+    "anchors": [
+      {
+        "element": "h2",
+        "id": "installation",
+        "text": "Installation",
+        "location": 12
+      },
+      {
+        "element": "h2",
+        "id": "quickstart",
+        "text": "Quickstart",
+        "location": 18
+      }
+    ]
+  }
+]

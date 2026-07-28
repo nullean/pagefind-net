@@ -44,4 +44,13 @@ public sealed class PagefindRecord
 	/// </summary>
 	public IReadOnlyDictionary<string, IReadOnlyList<string>> Filters { get; init; } =
 		new Dictionary<string, IReadOnlyList<string>>();
+
+	/// <summary>
+	/// Optional per-position weight map. When provided, each word position in
+	/// <see cref="Content"/> gets the weight from this array instead of the
+	/// max-weight-per-word approach from <see cref="WeightedSegments"/>.
+	/// Populated automatically by <see cref="PagefindIndex.AddHtmlRecord"/>.
+	/// Index = word position in Content, value = weight for that position.
+	/// </summary>
+	internal byte[]? PositionWeights { get; init; }
 }

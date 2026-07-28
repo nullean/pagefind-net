@@ -334,24 +334,26 @@ internal static class EnglishPorter2
 
     private static void Step4(char[] buf, ref int len, int r2)
     {
-        if (EndsWith(buf, len, "ement") && InR(r2, len, 5)) { Delete(buf, ref len, 5); return; }
-        if (EndsWith(buf, len, "ment")  && InR(r2, len, 4)) { Delete(buf, ref len, 4); return; }
-        if (EndsWith(buf, len, "ance")  && InR(r2, len, 4)) { Delete(buf, ref len, 4); return; }
-        if (EndsWith(buf, len, "ence")  && InR(r2, len, 4)) { Delete(buf, ref len, 4); return; }
-        if (EndsWith(buf, len, "able")  && InR(r2, len, 4)) { Delete(buf, ref len, 4); return; }
-        if (EndsWith(buf, len, "ible")  && InR(r2, len, 4)) { Delete(buf, ref len, 4); return; }
-        if (EndsWith(buf, len, "ant")   && InR(r2, len, 3)) { Delete(buf, ref len, 3); return; }
-        if (EndsWith(buf, len, "ent")   && InR(r2, len, 3)) { Delete(buf, ref len, 3); return; }
-        if (EndsWith(buf, len, "ism")   && InR(r2, len, 3)) { Delete(buf, ref len, 3); return; }
-        if (EndsWith(buf, len, "ate")   && InR(r2, len, 3)) { Delete(buf, ref len, 3); return; }
-        if (EndsWith(buf, len, "iti")   && InR(r2, len, 3)) { Delete(buf, ref len, 3); return; }
-        if (EndsWith(buf, len, "ous")   && InR(r2, len, 3)) { Delete(buf, ref len, 3); return; }
-        if (EndsWith(buf, len, "ive")   && InR(r2, len, 3)) { Delete(buf, ref len, 3); return; }
-        if (EndsWith(buf, len, "ize")   && InR(r2, len, 3)) { Delete(buf, ref len, 3); return; }
-        if (EndsWith(buf, len, "ion")   && InR(r2, len, 3) && len >= 4 && (buf[len - 4] == 's' || buf[len - 4] == 't')) { Delete(buf, ref len, 3); return; }
-        if (EndsWith(buf, len, "al")    && InR(r2, len, 2)) { Delete(buf, ref len, 2); return; }
-        if (EndsWith(buf, len, "er")    && InR(r2, len, 2)) { Delete(buf, ref len, 2); return; }
-        if (EndsWith(buf, len, "ic")    && InR(r2, len, 2)) { Delete(buf, ref len, 2); }
+        // Per the Porter2 spec: find the LONGEST matching suffix. If found and in R2,
+        // delete it. If found but NOT in R2, do nothing (do not try shorter suffixes).
+        if (EndsWith(buf, len, "ement")) { if (InR(r2, len, 5)) Delete(buf, ref len, 5); return; }
+        if (EndsWith(buf, len, "ment"))  { if (InR(r2, len, 4)) Delete(buf, ref len, 4); return; }
+        if (EndsWith(buf, len, "ance"))  { if (InR(r2, len, 4)) Delete(buf, ref len, 4); return; }
+        if (EndsWith(buf, len, "ence"))  { if (InR(r2, len, 4)) Delete(buf, ref len, 4); return; }
+        if (EndsWith(buf, len, "able"))  { if (InR(r2, len, 4)) Delete(buf, ref len, 4); return; }
+        if (EndsWith(buf, len, "ible"))  { if (InR(r2, len, 4)) Delete(buf, ref len, 4); return; }
+        if (EndsWith(buf, len, "ant"))   { if (InR(r2, len, 3)) Delete(buf, ref len, 3); return; }
+        if (EndsWith(buf, len, "ent"))   { if (InR(r2, len, 3)) Delete(buf, ref len, 3); return; }
+        if (EndsWith(buf, len, "ism"))   { if (InR(r2, len, 3)) Delete(buf, ref len, 3); return; }
+        if (EndsWith(buf, len, "ate"))   { if (InR(r2, len, 3)) Delete(buf, ref len, 3); return; }
+        if (EndsWith(buf, len, "iti"))   { if (InR(r2, len, 3)) Delete(buf, ref len, 3); return; }
+        if (EndsWith(buf, len, "ous"))   { if (InR(r2, len, 3)) Delete(buf, ref len, 3); return; }
+        if (EndsWith(buf, len, "ive"))   { if (InR(r2, len, 3)) Delete(buf, ref len, 3); return; }
+        if (EndsWith(buf, len, "ize"))   { if (InR(r2, len, 3)) Delete(buf, ref len, 3); return; }
+        if (EndsWith(buf, len, "ion"))   { if (len >= 4 && (buf[len - 4] == 's' || buf[len - 4] == 't') && InR(r2, len, 3)) Delete(buf, ref len, 3); return; }
+        if (EndsWith(buf, len, "al"))    { if (InR(r2, len, 2)) Delete(buf, ref len, 2); return; }
+        if (EndsWith(buf, len, "er"))    { if (InR(r2, len, 2)) Delete(buf, ref len, 2); return; }
+        if (EndsWith(buf, len, "ic"))    { if (InR(r2, len, 2)) Delete(buf, ref len, 2); }
     }
 
     private static void Step5(char[] buf, ref int len, int r1, int r2)

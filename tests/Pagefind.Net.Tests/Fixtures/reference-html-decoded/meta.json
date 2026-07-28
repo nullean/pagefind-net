@@ -1,0 +1,29 @@
+{
+  "version": "1.5.2",
+  "pages": [
+    {
+      "hash": "en_4b447a4",
+      "wordCount": 25
+    },
+    {
+      "hash": "en_e895654",
+      "wordCount": 24
+    },
+    {
+      "hash": "en_d9a67b5",
+      "wordCount": 27
+    }
+  ],
+  "indexChunks": [
+    {
+      "from": "47",
+      "to": "writeasync",
+      "hash": "en_3af224d"
+    }
+  ],
+  "filterChunks": [],
+  "sorts": [],
+  "metaFields": [
+    "title"
+  ]
+}
