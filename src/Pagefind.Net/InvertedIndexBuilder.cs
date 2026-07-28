@@ -54,7 +54,7 @@ internal sealed class InvertedIndexBuilder
 	/// Merges pre-tokenized data into the shared inverted index.
 	/// Caller must ensure exclusive access (e.g. via a lock).
 	/// </summary>
-	internal void Merge(int pageIndex, TokenizedRecord tokenized, PagefindRecord record)
+	internal void Merge(int pageIndex, TokenizedRecord tokenized, PagefindRecord record, IReadOnlySet<string>? indexedMetaFields = null)
 	{
 		// Phase 3: Merge primary tokens
 		foreach (var (word, positions) in tokenized.ContentWords)
@@ -102,6 +102,13 @@ internal sealed class InvertedIndexBuilder
 		for (var fieldIdx = 0; fieldIdx < metaFieldOrder.Count; fieldIdx++)
 		{
 			var fieldName = metaFieldOrder[fieldIdx];
+
+			// Skip meta fields not in the allowed set (but always include "title")
+			if (indexedMetaFields is not null
+				&& !indexedMetaFields.Contains(fieldName)
+				&& !fieldName.Equals("title", StringComparison.Ordinal))
+				continue;
+
 			var fieldValue = record.Meta[fieldName];
 			if (string.IsNullOrWhiteSpace(fieldValue)) continue;
 
@@ -128,7 +135,7 @@ internal sealed class InvertedIndexBuilder
 					existing = new PagePosting(pageIndex, []);
 					postings.Add(existing);
 				}
-				existing.MetaRuns.Add(new MetaFieldRun(fieldIdx, [.. p]));
+				existing.MetaRuns.Add(new MetaFieldRun(fieldName, [.. p]));
 			}
 		}
 	}
@@ -309,4 +316,4 @@ internal record WeightRun(byte Weight, int[] Positions);
 /// <summary>
 /// A meta field run recording which positions in a meta field value contain this word.
 /// </summary>
-internal record MetaFieldRun(int FieldId, int[] Positions);
+internal record MetaFieldRun(string FieldName, int[] Positions);

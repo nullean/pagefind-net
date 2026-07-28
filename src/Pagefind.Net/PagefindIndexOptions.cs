@@ -26,4 +26,11 @@ public sealed class PagefindIndexOptions
 	/// Defaults to <c>500</c>.
 	/// </summary>
 	public int MergeBatchSize { get; init; } = 500;
+
+	/// <summary>
+	/// Meta field names to include in the search index's meta_locs.
+	/// When null (default), all meta fields from records are indexed.
+	/// "title" is always included regardless of this setting.
+	/// </summary>
+	public IReadOnlyList<string>? IndexedMetaFields { get; init; }
 }
