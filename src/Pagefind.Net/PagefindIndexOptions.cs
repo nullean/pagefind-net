@@ -17,4 +17,13 @@ public sealed class PagefindIndexOptions
 	/// Pagefind's default include-character set). Empty string = default behaviour.
 	/// </summary>
 	public string IncludeCharacters { get; init; } = "";
+
+	/// <summary>
+	/// Number of tokenized records to accumulate before merging them into the
+	/// inverted index. Higher values reduce lock contention under concurrent
+	/// <see cref="PagefindIndex.AddRecord"/> calls at the cost of holding more
+	/// pending results in memory. Set to <c>1</c> to merge on every call.
+	/// Defaults to <c>500</c>.
+	/// </summary>
+	public int MergeBatchSize { get; init; } = 500;
 }

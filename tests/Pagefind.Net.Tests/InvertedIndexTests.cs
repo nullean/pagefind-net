@@ -16,13 +16,15 @@ public sealed class InvertedIndexTests
 	public void SingleWordSinglePage()
 	{
 		var builder = new InvertedIndexBuilder(Tokenizer, Stemmer);
-		builder.AddRecord(0, new PagefindRecord
+		var record = new PagefindRecord
 		{
 			Url = "/a/",
 			Title = "A",
 			Content = "hello world",
 			WeightedSegments = [new WeightedSegment("hello world", Weight: 1)],
-		});
+		};
+		var tokenized = builder.Tokenize(record);
+		builder.Merge(0, tokenized, record);
 
 		var index = builder.Build();
 		// "hello" and "world" should appear; stemmed forms may differ.
@@ -34,17 +36,17 @@ public sealed class InvertedIndexTests
 	public void MultiPageDeltaEncoding()
 	{
 		var builder = new InvertedIndexBuilder(Tokenizer, Stemmer);
-		builder.AddRecord(0, new PagefindRecord
+		AddRecord(builder, 0, new PagefindRecord
 		{
 			Url = "/a/", Title = "A", Content = "search engine",
 			WeightedSegments = [new WeightedSegment("search engine", Weight: 1)],
 		});
-		builder.AddRecord(1, new PagefindRecord
+		AddRecord(builder, 1, new PagefindRecord
 		{
 			Url = "/b/", Title = "B", Content = "search results",
 			WeightedSegments = [new WeightedSegment("search results", Weight: 1)],
 		});
-		builder.AddRecord(2, new PagefindRecord
+		AddRecord(builder, 2, new PagefindRecord
 		{
 			Url = "/c/", Title = "C", Content = "search query",
 			WeightedSegments = [new WeightedSegment("search query", Weight: 1)],
@@ -64,7 +66,7 @@ public sealed class InvertedIndexTests
 	public void WeightBoostFromSegments()
 	{
 		var builder = new InvertedIndexBuilder(Tokenizer, Stemmer);
-		builder.AddRecord(0, new PagefindRecord
+		AddRecord(builder, 0, new PagefindRecord
 		{
 			Url = "/a/", Title = "A", Content = "search engine",
 			WeightedSegments =
@@ -92,7 +94,7 @@ public sealed class InvertedIndexTests
 	public void WordsAreSortedAlphabetically()
 	{
 		var builder = new InvertedIndexBuilder(Tokenizer, Stemmer);
-		builder.AddRecord(0, new PagefindRecord
+		AddRecord(builder, 0, new PagefindRecord
 		{
 			Url = "/a/", Title = "A", Content = "zebra apple mango",
 			WeightedSegments = [new WeightedSegment("zebra apple mango", Weight: 1)],
@@ -101,5 +103,59 @@ public sealed class InvertedIndexTests
 		var index = builder.Build();
 		var keys = index.Keys.ToList();
 		keys.Should().BeInAscendingOrder();
+	}
+
+	[Test]
+	public async Task ConcurrentAddRecordDoesNotCorruptIndex()
+	{
+		const int recordCount = 10_000;
+
+		var fs = new System.IO.Abstractions.TestingHelpers.MockFileSystem();
+		var index = new PagefindIndex(
+			new PagefindIndexOptions { Language = "en" },
+			fs);
+
+		var records = new PagefindRecord[recordCount];
+		for (var i = 0; i < recordCount; i++)
+		{
+			records[i] = new PagefindRecord
+			{
+				Url = $"/page-{i}/",
+				Title = $"Page {i}",
+				Content = $"search result number {i} with some extra words to index properly",
+				WeightedSegments =
+				[
+					new WeightedSegment($"Page {i}", Weight: 7),
+					new WeightedSegment($"search result number {i} with some extra words to index properly", Weight: 1),
+				],
+			};
+		}
+
+		Parallel.ForEach(records, record => index.AddRecord(record));
+
+		await index.WriteAsync("/output", CancellationToken.None);
+
+		var pagefindDir = "/output/pagefind";
+		fs.File.Exists($"{pagefindDir}/pagefind-entry.json").Should().BeTrue();
+		fs.Directory.GetFiles($"{pagefindDir}", "*.pf_meta").Should().HaveCount(1);
+		fs.Directory.GetFiles($"{pagefindDir}/fragment", "*.pf_fragment")
+			.Should().HaveCount(recordCount, $"one fragment per record ({recordCount})");
+		fs.Directory.GetFiles($"{pagefindDir}/index", "*.pf_index")
+			.Should().NotBeEmpty("at least one index chunk is expected");
+
+		var entryJson = fs.File.ReadAllText($"{pagefindDir}/pagefind-entry.json");
+		using var doc = System.Text.Json.JsonDocument.Parse(entryJson);
+		var pageCount = doc.RootElement
+			.GetProperty("languages")
+			.GetProperty("en")
+			.GetProperty("page_count")
+			.GetInt32();
+		pageCount.Should().Be(recordCount);
+	}
+
+	private static void AddRecord(InvertedIndexBuilder builder, int pageIndex, PagefindRecord record)
+	{
+		var tokenized = builder.Tokenize(record);
+		builder.Merge(pageIndex, tokenized, record);
 	}
 }

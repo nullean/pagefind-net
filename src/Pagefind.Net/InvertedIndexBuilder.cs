@@ -18,19 +18,20 @@ internal sealed class InvertedIndexBuilder
 		_stemmer = stemmer;
 	}
 
-	internal void AddRecord(int pageIndex, PagefindRecord record)
+	/// <summary>
+	/// CPU-heavy tokenization and stemming — no shared state is accessed.
+	/// Safe to call concurrently from multiple threads.
+	/// </summary>
+	internal TokenizedRecord Tokenize(PagefindRecord record)
 	{
 		// Phase 1: Tokenize Content to establish canonical positions.
-		// Positions in the index must correspond to word offsets in Content
-		// because the fragment stores Content and the frontend uses positions for excerpts.
 		var contentWords = new Dictionary<string, List<int>>(StringComparer.Ordinal);
 		var compoundPositions = new Dictionary<string, List<int>>(StringComparer.Ordinal);
 		var compoundCountAtPosition = new Dictionary<int, int>();
 		var contentSink = new IndexTokenSink(contentWords, compoundPositions, compoundCountAtPosition, _stemmer, 0);
 		_tokenizer.Tokenize(record.Content.AsSpan(), ref contentSink);
 
-		// Phase 2: Determine max weight for each word across all WeightedSegments.
-		// All segments are processed (including weight 0 for addCustomRecord parity).
+		// Phase 2: Determine which words appear in higher-weight segments.
 		var wordWeights = new Dictionary<string, byte>(StringComparer.Ordinal);
 		foreach (var segment in record.WeightedSegments)
 		{
@@ -46,14 +47,20 @@ internal sealed class InvertedIndexBuilder
 			}
 		}
 
-		// Phase 3: Merge primary tokens into the global index.
-		// When PositionWeights is provided (AddHtmlRecord), use per-position weights.
-		// Otherwise, use the max-weight-per-word from WeightedSegments.
-		foreach (var (word, positions) in contentWords)
+		return new TokenizedRecord(contentWords, wordWeights, compoundPositions, compoundCountAtPosition);
+	}
+
+	/// <summary>
+	/// Merges pre-tokenized data into the shared inverted index.
+	/// Caller must ensure exclusive access (e.g. via a lock).
+	/// </summary>
+	internal void Merge(int pageIndex, TokenizedRecord tokenized, PagefindRecord record)
+	{
+		// Phase 3: Merge primary tokens
+		foreach (var (word, positions) in tokenized.ContentWords)
 		{
 			if (record.PositionWeights is not null)
 			{
-				// Per-position weights: group positions by their weight, create a run per group.
 				var grouped = new Dictionary<byte, List<int>>();
 				foreach (var pos in positions)
 				{
@@ -66,27 +73,23 @@ internal sealed class InvertedIndexBuilder
 			}
 			else
 			{
-				var weight = wordWeights.TryGetValue(word, out var w) ? w : (byte)0;
+				var weight = tokenized.WordWeights.TryGetValue(word, out var w) ? w : (byte)0;
 				AddRun(pageIndex, word, weight, positions);
 			}
 		}
 
-		// Phase 3b: Merge compound parts with reduced weight.
-		// partial_weight = max(1, base_weight / compound_count) per pagefind behaviour.
-		foreach (var (word, positions) in compoundPositions)
+		// Phase 3b: Compound parts with reduced weight
+		foreach (var (word, positions) in tokenized.CompoundPositions)
 		{
 			var grouped = new Dictionary<byte, List<int>>();
 			foreach (var pos in positions)
 			{
 				var baseWeight = record.PositionWeights is not null && pos < record.PositionWeights.Length
 					? record.PositionWeights[pos]
-					: wordWeights.TryGetValue(word, out var bw) ? bw : (byte)0;
-
-				var compoundCount = compoundCountAtPosition.GetValueOrDefault(pos, 1);
+					: tokenized.WordWeights.TryGetValue(word, out var bw) ? bw : (byte)0;
+				var compoundCount = tokenized.CompoundCountAtPosition.GetValueOrDefault(pos, 1);
 				var partialWeight = baseWeight > 0 && compoundCount > 0
-					? (byte)Math.Max(1, baseWeight / compoundCount)
-					: (byte)0;
-
+					? (byte)Math.Max(1, baseWeight / compoundCount) : (byte)0;
 				if (!grouped.TryGetValue(partialWeight, out var posList))
 					grouped[partialWeight] = posList = [];
 				posList.Add(pos);
@@ -94,16 +97,13 @@ internal sealed class InvertedIndexBuilder
 			AddGroupedRuns(pageIndex, word, grouped);
 		}
 
-		// Phase 4: Index meta field values (e.g. meta.title) into metaLocs.
-		// Pagefind indexes these separately so titles can be searched/boosted
-		// even if their words don't appear in the body content.
+		// Phase 4: Meta field indexing
 		var metaFieldOrder = record.Meta.Keys.OrderBy(k => k, StringComparer.Ordinal).ToList();
 		for (var fieldIdx = 0; fieldIdx < metaFieldOrder.Count; fieldIdx++)
 		{
 			var fieldName = metaFieldOrder[fieldIdx];
 			var fieldValue = record.Meta[fieldName];
-			if (string.IsNullOrWhiteSpace(fieldValue))
-				continue;
+			if (string.IsNullOrWhiteSpace(fieldValue)) continue;
 
 			var metaWords = new Dictionary<string, List<int>>(StringComparer.Ordinal);
 			var metaCompound = new Dictionary<string, List<int>>(StringComparer.Ordinal);
@@ -111,28 +111,24 @@ internal sealed class InvertedIndexBuilder
 			var metaSink = new IndexTokenSink(metaWords, metaCompound, metaCompoundCounts, _stemmer, 0);
 			_tokenizer.Tokenize(fieldValue.AsSpan(), ref metaSink);
 
-			// Merge meta words (including compound parts) into the global index's metaRuns.
 			var allMetaWords = new Dictionary<string, List<int>>(metaWords, StringComparer.Ordinal);
-			foreach (var (word, positions) in metaCompound)
+			foreach (var (w, p) in metaCompound)
 			{
-				if (allMetaWords.TryGetValue(word, out var existing))
-					existing.AddRange(positions);
-				else
-					allMetaWords[word] = [.. positions];
+				if (allMetaWords.TryGetValue(w, out var existing)) existing.AddRange(p);
+				else allMetaWords[w] = [.. p];
 			}
 
-			foreach (var (word, positions) in allMetaWords)
+			foreach (var (w, p) in allMetaWords)
 			{
-				if (!_index.TryGetValue(word, out var postings))
-					_index[word] = postings = [];
-
-				var existing = postings.FirstOrDefault(p => p.PageIndex == pageIndex);
+				if (!_index.TryGetValue(w, out var postings))
+					_index[w] = postings = [];
+				var existing = postings.FirstOrDefault(pp => pp.PageIndex == pageIndex);
 				if (existing is null)
 				{
 					existing = new PagePosting(pageIndex, []);
 					postings.Add(existing);
 				}
-				existing.MetaRuns.Add(new MetaFieldRun(fieldIdx, [.. positions]));
+				existing.MetaRuns.Add(new MetaFieldRun(fieldIdx, [.. p]));
 			}
 		}
 	}
@@ -141,16 +137,11 @@ internal sealed class InvertedIndexBuilder
 	{
 		if (!_index.TryGetValue(word, out var postings))
 			_index[word] = postings = [];
-
 		var existing = postings.FirstOrDefault(p => p.PageIndex == pageIndex);
 		if (existing is not null)
-		{
 			existing.Runs.Add(new WeightRun(weight, [.. positions]));
-		}
 		else
-		{
 			postings.Add(new PagePosting(pageIndex, [new WeightRun(weight, [.. positions])]));
-		}
 	}
 
 	private void AddGroupedRuns(int pageIndex, string word, Dictionary<byte, List<int>> grouped)
@@ -236,15 +227,15 @@ internal sealed class InvertedIndexBuilder
 			if (stemLen == 0) return;
 			var stemmed = stemBuf[..stemLen];
 
-			_currentCompoundCount++;
-			_compoundCountAtPosition[_globalPosition] = _currentCompoundCount;
-
 			if (!_compoundLookup.TryGetValue(stemmed, out var positions))
 			{
 				positions = [];
 				_compoundPositions[new string(stemmed)] = positions;
 			}
 			positions.Add(_globalPosition);
+
+			_currentCompoundCount++;
+			_compoundCountAtPosition[_globalPosition] = _currentCompoundCount;
 		}
 	}
 
@@ -284,16 +275,28 @@ internal sealed class InvertedIndexBuilder
 	}
 }
 
+/// <summary>
+/// Holds the result of tokenizing a single record.
+/// Produced by <see cref="InvertedIndexBuilder.Tokenize"/> (no shared state),
+/// consumed by <see cref="InvertedIndexBuilder.Merge"/> (under lock).
+/// </summary>
+internal sealed class TokenizedRecord(
+	Dictionary<string, List<int>> contentWords,
+	Dictionary<string, byte> wordWeights,
+	Dictionary<string, List<int>> compoundPositions,
+	Dictionary<int, int> compoundCountAtPosition)
+{
+	internal Dictionary<string, List<int>> ContentWords { get; } = contentWords;
+	internal Dictionary<string, byte> WordWeights { get; } = wordWeights;
+	internal Dictionary<string, List<int>> CompoundPositions { get; } = compoundPositions;
+	internal Dictionary<int, int> CompoundCountAtPosition { get; } = compoundCountAtPosition;
+}
+
 /// <summary>One page's postings for a given word.</summary>
 internal sealed class PagePosting(int pageIndex, List<WeightRun> runs)
 {
 	internal int PageIndex { get; } = pageIndex;
 	internal List<WeightRun> Runs { get; } = runs;
-
-	/// <summary>
-	/// Meta-field positions (e.g. title words). Encoded as field-ID markers
-	/// followed by delta-encoded positions: <c>[-(fieldId+1), pos, ...]</c>.
-	/// </summary>
 	internal List<MetaFieldRun> MetaRuns { get; } = [];
 }
 
@@ -304,7 +307,6 @@ internal sealed class PagePosting(int pageIndex, List<WeightRun> runs)
 internal record WeightRun(byte Weight, int[] Positions);
 
 /// <summary>
-/// Positions of a word within a single meta field.
-/// Encoded as <c>[-(fieldId+1), delta_positions...]</c> in the CBOR meta_locs array.
+/// A meta field run recording which positions in a meta field value contain this word.
 /// </summary>
 internal record MetaFieldRun(int FieldId, int[] Positions);
