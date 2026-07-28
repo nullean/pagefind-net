@@ -39,6 +39,7 @@ internal static class PagefindWriter
 		IFileSystem fs,
 		string pagefindDir,
 		SortedDictionary<string, List<PagePosting>> invertedIndex,
+		Dictionary<string, int> fieldNameToId,
 		CancellationToken ct)
 	{
 		if (invertedIndex.Count == 0)
@@ -55,7 +56,7 @@ internal static class PagefindWriter
 
 			if (bufferSize >= ChunkTargetBytes)
 			{
-				var chunk = await FlushChunkAsync(fs, pagefindDir, wordBuffer, ct);
+				var chunk = await FlushChunkAsync(fs, pagefindDir, wordBuffer, fieldNameToId, ct);
 				chunks.Add(chunk);
 				wordBuffer.Clear();
 				bufferSize = 0;
@@ -64,7 +65,7 @@ internal static class PagefindWriter
 
 		if (wordBuffer.Count > 0)
 		{
-			var chunk = await FlushChunkAsync(fs, pagefindDir, wordBuffer, ct);
+			var chunk = await FlushChunkAsync(fs, pagefindDir, wordBuffer, fieldNameToId, ct);
 			chunks.Add(chunk);
 		}
 
@@ -75,9 +76,10 @@ internal static class PagefindWriter
 		IFileSystem fs,
 		string pagefindDir,
 		List<KeyValuePair<string, List<PagePosting>>> words,
+		Dictionary<string, int> fieldNameToId,
 		CancellationToken ct)
 	{
-		var cbor = BuildIndexCbor(words);
+		var cbor = BuildIndexCbor(words, fieldNameToId);
 		var hashBytes = SHA256.HashData(cbor);
 		var hash = Convert.ToHexString(hashBytes)[..8].ToLowerInvariant();
 
@@ -96,7 +98,7 @@ internal static class PagefindWriter
 	/// Encodes one index shard into CBOR.
 	/// Structure: outer array → words array (word, postings_flat, variants?).
 	/// </summary>
-	private static byte[] BuildIndexCbor(List<KeyValuePair<string, List<PagePosting>>> words)
+	private static byte[] BuildIndexCbor(List<KeyValuePair<string, List<PagePosting>>> words, Dictionary<string, int> fieldNameToId)
 	{
 		var w = new CborWriter(CborConformanceMode.Lax);
 
@@ -131,7 +133,7 @@ internal static class PagefindWriter
 				w.WriteEndArray();
 
 				// Meta-locs: field-ID markers + delta-encoded positions.
-				var metaLocs = BuildMetaLocs(posting.MetaRuns);
+				var metaLocs = BuildMetaLocs(posting.MetaRuns, fieldNameToId);
 				w.WriteStartArray(metaLocs.Length);
 				foreach (var ml in metaLocs)
 					w.WriteInt32(ml);
@@ -209,13 +211,13 @@ internal static class PagefindWriter
 	/// Format: <c>[-(fieldId+1), pos_delta, ...]</c> for each field.
 	/// Matches the official Pagefind binary's <c>meta_positions_to_packed</c>.
 	/// </summary>
-	private static int[] BuildMetaLocs(List<MetaFieldRun> runs)
+	private static int[] BuildMetaLocs(List<MetaFieldRun> runs, Dictionary<string, int> fieldNameToId)
 	{
 		if (runs.Count == 0)
 			return [];
 
-		// Sort by field ID, then positions within each field
-		var sorted = runs.OrderBy(r => r.FieldId).ToList();
+		// Sort by resolved global field ID, then positions within each field
+		var sorted = runs.OrderBy(r => fieldNameToId[r.FieldName]).ToList();
 
 		var totalLen = 0;
 		foreach (var run in sorted)
@@ -226,7 +228,7 @@ internal static class PagefindWriter
 
 		foreach (var run in sorted)
 		{
-			result[idx++] = -(run.FieldId + 1);
+			result[idx++] = -(fieldNameToId[run.FieldName] + 1);
 
 			var prevPos = 0;
 			foreach (var pos in run.Positions)
@@ -260,7 +262,8 @@ internal static class PagefindWriter
 		string version,
 		string[] pageHashes,
 		int[] wordCounts,
-		IndexChunkInfo[] indexChunks)
+		IndexChunkInfo[] indexChunks,
+		string[] metaFields)
 	{
 		var w = new CborWriter(CborConformanceMode.Lax);
 
@@ -301,9 +304,10 @@ internal static class PagefindWriter
 		w.WriteStartArray(0);
 		w.WriteEndArray();
 
-		// 6. meta_fields: include "title" (matches pagefind binary output)
-		w.WriteStartArray(1);
-		w.WriteTextString("title");
+		// 6. meta_fields: all indexed meta field names (sorted alphabetically)
+		w.WriteStartArray(metaFields.Length);
+		foreach (var field in metaFields)
+			w.WriteTextString(field);
 		w.WriteEndArray();
 
 		w.WriteEndArray(); // outer

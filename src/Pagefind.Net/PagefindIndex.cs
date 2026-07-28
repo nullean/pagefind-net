@@ -43,6 +43,7 @@ public sealed class PagefindIndex
 	private readonly ConcurrentQueue<PendingPage> _pending = new();
 	private readonly Lock _mergeLock = new();
 	private readonly int _batchSize;
+	private readonly HashSet<string>? _indexedMetaFields;
 
 	/// <summary>Initialises a new index with the given options.</summary>
 	/// <param name="options">Index configuration.</param>
@@ -57,6 +58,9 @@ public sealed class PagefindIndex
 		_options = options ?? new PagefindIndexOptions();
 		_fs = fileSystem ?? new FileSystem();
 		_batchSize = Math.Max(1, _options.MergeBatchSize);
+		_indexedMetaFields = _options.IndexedMetaFields is { Count: > 0 }
+			? new HashSet<string>(_options.IndexedMetaFields, StringComparer.Ordinal)
+			: null;
 		var tokenizer = new Tokenizer(_options.IncludeCharacters);
 		var stemmer = new Stemmer(_options.Language);
 		_builder = new InvertedIndexBuilder(tokenizer, stemmer);
@@ -107,7 +111,7 @@ public sealed class PagefindIndex
 			while (_pending.TryDequeue(out var page))
 			{
 				var pageIndex = _pages.Count;
-				_builder.Merge(pageIndex, page.Tokenized, page.Record);
+				_builder.Merge(pageIndex, page.Tokenized, page.Record, _indexedMetaFields);
 				_pages.Add(new IndexedPage(page.FragmentHash, page.FragmentBytes, page.WordCount));
 			}
 		}
@@ -220,6 +224,17 @@ public sealed class PagefindIndex
 		// 1. Finalize the inverted index (sort postings — no tokenization).
 		var invertedIndex = _builder.Build();
 
+		// Collect all unique meta field names from all postings and build the global mapping.
+		var metaFieldSet = new HashSet<string>(StringComparer.Ordinal);
+		foreach (var (_, postings) in invertedIndex)
+			foreach (var posting in postings)
+				foreach (var run in posting.MetaRuns)
+					metaFieldSet.Add(run.FieldName);
+		var metaFields = metaFieldSet.OrderBy(f => f, StringComparer.Ordinal).ToArray();
+		var fieldNameToId = new Dictionary<string, int>(StringComparer.Ordinal);
+		for (var i = 0; i < metaFields.Length; i++)
+			fieldNameToId[metaFields[i]] = i;
+
 		// 2. Write pre-built fragment files.
 		var pageHashes = new string[_pages.Count];
 		for (var i = 0; i < _pages.Count; i++)
@@ -232,7 +247,7 @@ public sealed class PagefindIndex
 
 		// 3. Write index chunk files.
 		var indexChunks = await PagefindWriter.WriteIndexChunksAsync(
-			_fs, pagefindDir, invertedIndex, ct);
+			_fs, pagefindDir, invertedIndex, fieldNameToId, ct);
 
 		// 4. Write the meta file.
 		var wordCounts = new int[_pages.Count];
@@ -243,7 +258,8 @@ public sealed class PagefindIndex
 			PagefindTargetVersion,
 			pageHashes,
 			wordCounts,
-			indexChunks);
+			indexChunks,
+			metaFields);
 
 		await PagefindWriter.WriteFramedAsync(
 			_fs,
