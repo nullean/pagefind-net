@@ -13,6 +13,12 @@ internal interface ITokenSink
     void OnToken(scoped ReadOnlySpan<char> token);
 
     /// <summary>
+    /// Called for each sub-word produced by compound splitting (PascalCase, dot, punctuation).
+    /// These share the same position as the primary token. Default forwards to OnToken.
+    /// </summary>
+    void OnCompoundPart(scoped ReadOnlySpan<char> token) => OnToken(token);
+
+    /// <summary>
     /// Called once per whitespace-delimited word in the source text, BEFORE any
     /// tokens from that word are emitted. This lets consumers track positions
     /// by source word (as pagefind's frontend does for excerpt highlighting)
@@ -33,10 +39,16 @@ internal sealed class Tokenizer
     private static readonly SearchValues<char> ZeroWidthChars =
         SearchValues.Create("​‌‍﻿­");
 
+    /// <summary>
+    /// Pagefind's default connector characters (Unicode Pc category).
+    /// Always included during tokenisation, matching the Rust binary's behaviour.
+    /// </summary>
+    private const string DefaultConnectorChars = "_\u203F\u2040\u2054\uFE33\uFE34\uFE4D\uFE4E\uFE4F\uFF3F";
+
     private readonly SearchValues<char> _includeChars;
 
     internal Tokenizer(string includeCharacters) =>
-        _includeChars = SearchValues.Create(includeCharacters.AsSpan());
+        _includeChars = SearchValues.Create(string.Concat(DefaultConnectorChars, includeCharacters).AsSpan());
 
     /// <summary>
     /// Push-based tokenisation: each normalised token is delivered to
@@ -81,29 +93,139 @@ internal sealed class Tokenizer
         }
         try
         {
-            var dotIdx = word.IndexOf('.');
-            if (dotIdx >= 0)
-            {
-                // Compound split on '.': emit joined form (dots removed) PLUS each sub-part.
-                // This mirrors pagefind's behaviour: "foo.bar" → ["foobar", "foo", "bar"].
-                var joinedLen = NormalizeNoDot(word, normBuf);
-                if (joinedLen > 0) sink.OnToken(normBuf[..joinedLen]);
-
-                var left = word[..dotIdx];
-                if (left.Length > 0) ProcessWord(left, ref sink, normBuf);
-
-                var right = word[(dotIdx + 1)..];
-                if (right.Length > 0) ProcessWord(right, ref sink, normBuf);
-                return;
-            }
-
+            // Emit the primary (joined) normalized form. Normalize strips dots,
+            // punctuation, and diacritics producing the joined compound form.
             var len = Normalize(word, normBuf);
             if (len > 0) sink.OnToken(normBuf[..len]);
+
+            // If the word is possibly compound (contains punctuation or PascalCase),
+            // split into discrete parts and emit each as a compound part.
+            if (IsPossiblyCompound(word))
+                EmitCompoundParts(word, ref sink, normBuf);
         }
         finally
         {
             if (rented is not null)
                 ArrayPool<char>.Shared.Return(rented);
+        }
+    }
+
+    /// <summary>
+    /// Returns true if the word contains punctuation (non-letter/digit, excluding
+    /// zero-width chars) or has uppercase letters after the first character,
+    /// indicating it may be a compound word.
+    /// </summary>
+    private static bool IsPossiblyCompound(ReadOnlySpan<char> word)
+    {
+        for (var i = 0; i < word.Length; i++)
+        {
+            if (ZeroWidthChars.Contains(word[i])) continue;
+            if (!char.IsLetterOrDigit(word[i])) return true;
+            if (i > 0 && char.IsUpper(word[i])) return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Splits a compound word into discrete parts (handling punctuation boundaries and
+    /// PascalCase) and emits each via OnCompoundPart. Matches pagefind's get_discrete_words
+    /// which replaces ASCII punctuation with spaces then applies convert_case Case::Lower.
+    /// </summary>
+    private void EmitCompoundParts<TSink>(ReadOnlySpan<char> word, ref TSink sink, scoped Span<char> normBuf)
+        where TSink : ITokenSink, allows ref struct
+    {
+        // Collect split points. We identify "segments" (contiguous runs of letters/digits)
+        // separated by punctuation, then within each segment apply PascalCase splitting.
+        Span<int> splitPoints = stackalloc int[word.Length + 1];
+        var splitCount = 0;
+
+        var segStart = -1;
+        for (var i = 0; i <= word.Length; i++)
+        {
+            var isWordChar = i < word.Length && char.IsLetterOrDigit(word[i]);
+            if (isWordChar && segStart < 0)
+                segStart = i;
+            else if (!isWordChar && segStart >= 0)
+            {
+                // End of a segment — apply PascalCase splitting within it
+                SplitPascalCase(word, segStart, i, splitPoints, ref splitCount);
+                segStart = -1;
+            }
+        }
+
+        if (splitCount <= 1) return; // Only 1 part means nothing to split
+
+        // Emit each part via OnCompoundPart
+        for (var p = 0; p < splitCount; p++)
+        {
+            var start = splitPoints[p];
+            var end = (p + 1 < splitCount) ? splitPoints[p + 1] : word.Length;
+
+            // Find the actual end: part extends to next split or next non-wordchar
+            var partEnd = end;
+            for (var k = start; k < end; k++)
+            {
+                if (!char.IsLetterOrDigit(word[k]))
+                {
+                    partEnd = k;
+                    break;
+                }
+            }
+
+            var part = word[start..partEnd];
+            if (part.Length <= 1) continue;
+
+            var partLen = Normalize(part, normBuf);
+            if (partLen > 1)
+                sink.OnCompoundPart(normBuf[..partLen]);
+        }
+    }
+
+    /// <summary>
+    /// Applies PascalCase splitting rules (matching convert_case Case::Lower) to a segment
+    /// of the word between segStart and segEnd. Appends split start positions to splitPoints.
+    /// Rules:
+    ///   - lowercase/digit → uppercase: split before uppercase
+    ///   - uppercase run + lowercase: split before last uppercase in the run
+    ///   - letter → digit: split before digit
+    ///   - digit → letter: split before letter
+    /// </summary>
+    private static void SplitPascalCase(ReadOnlySpan<char> word, int segStart, int segEnd, Span<int> splitPoints, ref int splitCount)
+    {
+        splitPoints[splitCount++] = segStart;
+
+        for (var i = segStart + 1; i < segEnd; i++)
+        {
+            var prev = word[i - 1];
+            var curr = word[i];
+
+            var prevUpper = char.IsUpper(prev);
+            var prevLower = char.IsLower(prev);
+            var prevDigit = char.IsDigit(prev);
+            var currUpper = char.IsUpper(curr);
+            var currLower = char.IsLower(curr);
+            var currDigit = char.IsDigit(curr);
+
+            // lowercase/digit → uppercase: "pageFind" → split before 'F'
+            if ((prevLower || prevDigit) && currUpper)
+            {
+                splitPoints[splitCount++] = i;
+            }
+            // letter → digit: "page2" → split before '2'
+            else if ((prevUpper || prevLower) && currDigit)
+            {
+                splitPoints[splitCount++] = i;
+            }
+            // digit → letter: "2page" → split before 'p'
+            else if (prevDigit && (currUpper || currLower))
+            {
+                splitPoints[splitCount++] = i;
+            }
+            // uppercase run + lowercase: "WKWeb" → split before last uppercase ('W')
+            else if (prevUpper && currLower && i >= segStart + 2 && char.IsUpper(word[i - 2]))
+            {
+                splitPoints[splitCount++] = i - 1;
+            }
         }
     }
 
@@ -113,7 +235,7 @@ internal sealed class Tokenizer
         var buf = ArrayPool<char>.Shared.Rent(word.Length * 2);
         try
         {
-            var len = CopyLoweredStripped(word, buf, stripDots: false);
+            var len = CopyLoweredStripped(word, buf);
             if (len == 0) return 0;
 
             var nfd = new string(buf, 0, len).Normalize(NormalizationForm.FormD);
@@ -125,32 +247,14 @@ internal sealed class Tokenizer
         }
     }
 
-    // Normalize and also strip dots (used for the joined compound form).
-    private int NormalizeNoDot(ReadOnlySpan<char> word, Span<char> output)
-    {
-        var buf = ArrayPool<char>.Shared.Rent(word.Length * 2);
-        try
-        {
-            var len = CopyLoweredStripped(word, buf, stripDots: true);
-            if (len == 0) return 0;
 
-            var nfd = new string(buf, 0, len).Normalize(NormalizationForm.FormD);
-            return StripNonSpacingMarks(nfd.AsSpan(), _includeChars, output);
-        }
-        finally
-        {
-            ArrayPool<char>.Shared.Return(buf);
-        }
-    }
-
-    // Copies word into buf: lowercased, zero-width chars removed, optionally dots removed.
-    private static int CopyLoweredStripped(ReadOnlySpan<char> word, char[] buf, bool stripDots)
+    // Copies word into buf: lowercased, zero-width chars removed.
+    private static int CopyLoweredStripped(ReadOnlySpan<char> word, char[] buf)
     {
         var len = 0;
         foreach (var c in word)
         {
             if (ZeroWidthChars.Contains(c)) continue;
-            if (stripDots && c == '.') continue;
             buf[len++] = char.ToLowerInvariant(c);
         }
         return len;

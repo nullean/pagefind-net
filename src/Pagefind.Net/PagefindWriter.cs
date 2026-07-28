@@ -130,8 +130,11 @@ internal static class PagefindWriter
 					w.WriteInt32(loc);
 				w.WriteEndArray();
 
-				// Meta-locs: empty for this implementation.
-				w.WriteStartArray(0);
+				// Meta-locs: field-ID markers + delta-encoded positions.
+				var metaLocs = BuildMetaLocs(posting.MetaRuns);
+				w.WriteStartArray(metaLocs.Length);
+				foreach (var ml in metaLocs)
+					w.WriteInt32(ml);
 				w.WriteEndArray();
 
 				w.WriteEndArray(); // posting
@@ -153,8 +156,9 @@ internal static class PagefindWriter
 
 	/// <summary>
 	/// Encodes weight runs into the Pagefind locs int array.
-	/// For each run: -weight (marker), then delta-encoded positions.
-	/// Pre-calculates exact size to avoid intermediate List allocation.
+	/// For each run: -(weight+1) marker, then delta-encoded positions.
+	/// The marker formula matches the official Pagefind binary:
+	/// <c>-(weight as i32) - 1</c> in Rust.
 	/// </summary>
 	private static int[] BuildLocs(List<WeightRun> runs)
 	{
@@ -166,7 +170,41 @@ internal static class PagefindWriter
 		var idx = 0;
 		foreach (var run in runs)
 		{
-			result[idx++] = -(int)Math.Clamp(run.Weight, (byte)1, (byte)255);
+			result[idx++] = -(int)run.Weight - 1;
+
+			var prevPos = 0;
+			foreach (var pos in run.Positions)
+			{
+				result[idx++] = pos - prevPos;
+				prevPos = pos;
+			}
+		}
+		return result;
+	}
+
+	/// <summary>
+	/// Encodes meta-field runs into the meta_locs int array.
+	/// Format: <c>[-(fieldId+1), pos_delta, ...]</c> for each field.
+	/// Matches the official Pagefind binary's <c>meta_positions_to_packed</c>.
+	/// </summary>
+	private static int[] BuildMetaLocs(List<MetaFieldRun> runs)
+	{
+		if (runs.Count == 0)
+			return [];
+
+		// Sort by field ID, then positions within each field
+		var sorted = runs.OrderBy(r => r.FieldId).ToList();
+
+		var totalLen = 0;
+		foreach (var run in sorted)
+			totalLen += 1 + run.Positions.Length;
+
+		var result = new int[totalLen];
+		var idx = 0;
+
+		foreach (var run in sorted)
+		{
+			result[idx++] = -(run.FieldId + 1);
 
 			var prevPos = 0;
 			foreach (var pos in run.Positions)
@@ -256,6 +294,14 @@ internal static class PagefindWriter
 
 	// ── pagefind-entry.json ────────────────────────────────────────────────────
 
+	/// <summary>
+	/// Pagefind's default connector characters (Unicode "Pc" category).
+	/// These are always included in the <c>include_characters</c> array in
+	/// <c>pagefind-entry.json</c>, matching the official binary's behaviour.
+	/// </summary>
+	internal static readonly string[] DefaultConnectorCharacters =
+		["_", "\u203F", "\u2040", "\u2054", "\uFE33", "\uFE34", "\uFE4D", "\uFE4E", "\uFE4F", "\uFF3F"];
+
 	internal static async Task WriteEntryJsonAsync(
 		IFileSystem fs,
 		string pagefindDir,
@@ -265,6 +311,8 @@ internal static class PagefindWriter
 		string includeCharacters,
 		CancellationToken ct)
 	{
+		var chars = BuildIncludeCharactersArray(includeCharacters);
+
 		var entry = new EntryJson
 		{
 			Version = PagefindIndex.PagefindTargetVersion,
@@ -277,12 +325,29 @@ internal static class PagefindWriter
 					PageCount = pageCount,
 				},
 			},
-			IncludeCharacters = includeCharacters,
+			IncludeCharacters = chars,
 		};
 
 		var json = JsonSerializer.SerializeToUtf8Bytes(entry, EntrySerializerContext.Default.EntryJson);
 		var path = Path.Combine(pagefindDir, "pagefind-entry.json");
 		await fs.File.WriteAllBytesAsync(path, json, ct);
+	}
+
+	/// <summary>
+	/// Builds the <c>include_characters</c> array for the entry JSON.
+	/// Merges the user-supplied characters with the default connector set,
+	/// emitting each character as a separate single-char string — matching
+	/// the official Pagefind binary output format.
+	/// </summary>
+	private static string[] BuildIncludeCharactersArray(string includeCharacters)
+	{
+		if (string.IsNullOrEmpty(includeCharacters))
+			return DefaultConnectorCharacters;
+
+		var set = new HashSet<string>(DefaultConnectorCharacters);
+		foreach (var c in includeCharacters)
+			set.Add(c.ToString());
+		return [.. set];
 	}
 }
 
@@ -299,7 +364,7 @@ internal sealed class EntryJson
 	public required Dictionary<string, LanguageEntry> Languages { get; init; }
 
 	[JsonPropertyName("include_characters")]
-	public required string IncludeCharacters { get; init; }
+	public required string[] IncludeCharacters { get; init; }
 }
 
 internal sealed class LanguageEntry
@@ -317,5 +382,6 @@ internal sealed class LanguageEntry
 [JsonSerializable(typeof(EntryJson))]
 [JsonSerializable(typeof(LanguageEntry))]
 [JsonSerializable(typeof(Dictionary<string, LanguageEntry>))]
+[JsonSerializable(typeof(string[]))]
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.SnakeCaseLower)]
 internal partial class EntrySerializerContext : JsonSerializerContext;

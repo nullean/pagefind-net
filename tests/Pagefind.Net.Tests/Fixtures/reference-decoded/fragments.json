@@ -1,0 +1,32 @@
+[
+  {
+    "url": "/api-reference/",
+    "content": "PagefindIndex, PagefindRecord, WeightedSegment, PagefindAnchor — full API reference.",
+    "word_count": 8,
+    "filters": {},
+    "meta": {
+      "title": "API Reference"
+    },
+    "anchors": []
+  },
+  {
+    "url": "/configuration/",
+    "content": "Configure PagefindIndexOptions: Language, IncludeCharacters, WeightedSegments.",
+    "word_count": 5,
+    "filters": {},
+    "meta": {
+      "title": "Configuration"
+    },
+    "anchors": []
+  },
+  {
+    "url": "/getting-started/",
+    "content": "Welcome to pagefind-net. Install the NuGet package and call WriteAsync.",
+    "word_count": 10,
+    "filters": {},
+    "meta": {
+      "title": "Getting Started"
+    },
+    "anchors": []
+  }
+]

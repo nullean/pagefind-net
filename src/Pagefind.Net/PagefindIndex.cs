@@ -88,6 +88,126 @@ public sealed class PagefindIndex
 	}
 
 	/// <summary>
+	/// Converts pre-parsed HTML page components into a <see cref="PagefindRecord"/>
+	/// with weights matching the official Pagefind binary, then indexes it.
+	/// </summary>
+	/// <remarks>
+	/// <para>
+	/// The caller provides the parsed HTML components — headings with levels,
+	/// body text sections, element IDs — and this method applies the official
+	/// Pagefind weight scheme: h1 = 168, h2 = 144, h3 = 120, h4 = 96,
+	/// h5 = 72, h6 = 48, body = 24.
+	/// </para>
+	/// <para>
+	/// Content is constructed by joining section texts with <c>". "</c>
+	/// separators (matching the official Pagefind binary's text extraction).
+	/// </para>
+	/// </remarks>
+	public void AddHtmlRecord(HtmlPageData page)
+	{
+		var content = BuildContent(page.Sections);
+		var title = FindTitle(page);
+		var anchors = BuildAnchors(page.Sections, content);
+		var segments = BuildSegments(page.Sections, content);
+
+		var meta = new Dictionary<string, string>(page.Meta);
+		if (!meta.ContainsKey("title"))
+			meta["title"] = title;
+
+		var record = new PagefindRecord
+		{
+			Url = page.Url,
+			Title = title,
+			Content = content,
+			WeightedSegments = segments,
+			Anchors = anchors,
+			Meta = meta,
+			Filters = page.Filters,
+		};
+
+		AddRecord(record);
+	}
+
+	private static string BuildContent(IReadOnlyList<HtmlSection> sections)
+	{
+		var sb = new System.Text.StringBuilder();
+		foreach (var section in sections)
+		{
+			if (string.IsNullOrWhiteSpace(section.Text))
+				continue;
+			if (sb.Length > 0)
+				sb.Append(". ");
+			sb.Append(section.Text);
+		}
+		// Ensure trailing period if content doesn't end with one (matching pagefind).
+		var result = sb.ToString();
+		if (result.Length > 0 && !result.EndsWith('.'))
+			result += '.';
+		return result;
+	}
+
+	private static string FindTitle(HtmlPageData page)
+	{
+		if (page.Meta.TryGetValue("title", out var title) && !string.IsNullOrWhiteSpace(title))
+			return title;
+
+		// Use first H1 text as title.
+		foreach (var section in page.Sections)
+		{
+			if (section.Tag.Equals("h1", StringComparison.OrdinalIgnoreCase))
+				return section.Text;
+		}
+
+		return "";
+	}
+
+	private static IReadOnlyList<PagefindAnchor> BuildAnchors(
+		IReadOnlyList<HtmlSection> sections, string content)
+	{
+		var anchors = new List<PagefindAnchor>();
+		var wordOffset = 0;
+
+		foreach (var section in sections)
+		{
+			if (string.IsNullOrWhiteSpace(section.Text))
+				continue;
+
+			var isHeading = section.Tag.Length == 2
+				&& section.Tag[0] is 'h' or 'H'
+				&& section.Tag[1] is >= '1' and <= '6';
+
+			if (isHeading && section.ElementId is not null)
+			{
+				anchors.Add(new PagefindAnchor(section.ElementId, section.Text, wordOffset));
+			}
+
+			wordOffset += CountWords(section.Text);
+		}
+
+		return anchors;
+	}
+
+	private static IReadOnlyList<WeightedSegment> BuildSegments(
+		IReadOnlyList<HtmlSection> sections, string content)
+	{
+		var segments = new List<WeightedSegment>();
+
+		foreach (var section in sections)
+		{
+			if (string.IsNullOrWhiteSpace(section.Text))
+				continue;
+
+			var weight = PagefindWeights.ForTag(section.Tag);
+			segments.Add(new WeightedSegment(section.Text, weight));
+		}
+
+		// Add the full content as a body-weight segment.
+		segments.Add(new WeightedSegment(content, PagefindWeights.Body));
+
+		return segments;
+	}
+
+	/// <summary>
 	/// Finalizes the inverted index and writes all data files to
 	/// <paramref name="outputDirectory"/>/pagefind/.
 	/// No tokenization is performed — all CPU-intensive work was done during

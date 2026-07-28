@@ -9,6 +9,7 @@
     <PackageReference Include="AwesomeAssertions" />
     <PackageReference Include="Verify.TUnit" />
     <PackageReference Include="GitHubActionsTestLogger" />
+    <PackageReference Include="System.Formats.Cbor" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Pagefind.Net\Pagefind.Net.csproj" />

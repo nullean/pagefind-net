@@ -1,0 +1,22 @@
+{
+  "version": "1.5.2",
+  "languages": {
+    "en": {
+      "hash": "en_c79250b61e",
+      "wasm": "en",
+      "page_count": 3
+    }
+  },
+  "include_characters": [
+    "_",
+    "‿",
+    "⁀",
+    "⁔",
+    "︳",
+    "︴",
+    "﹍",
+    "﹎",
+    "﹏",
+    "＿"
+  ]
+}

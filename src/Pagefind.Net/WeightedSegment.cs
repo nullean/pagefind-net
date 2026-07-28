@@ -5,7 +5,11 @@ namespace Pagefind.Net;
 /// </summary>
 /// <param name="Text">Plain-text content of this segment (markup-stripped).</param>
 /// <param name="Weight">
-/// Relative search weight. Pagefind convention: body = 1, H3 = 3, H2 = 4, H1 = 7.
-/// Encoded as a negative-int weight marker in the CBOR index.
+/// Raw Pagefind weight value. The official binary uses a 24x multiplier:
+/// body text = <c>0</c> (via <c>addCustomRecord</c>) or <c>24</c> (via HTML),
+/// headings = <c>auto_weight * 24</c> (h1=168, h2=144, h3=120, h4=96, h5=72, h6=48).
+/// Use <see cref="PagefindIndex.AddHtmlRecord"/> for automatic weight assignment
+/// that matches the official binary's behaviour.
+/// Encoded as <c>-(weight + 1)</c> marker in the CBOR index.
 /// </param>
 public readonly record struct WeightedSegment(string Text, byte Weight);

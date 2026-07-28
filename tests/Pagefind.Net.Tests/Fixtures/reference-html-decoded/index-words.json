@@ -1,0 +1,1068 @@
+{
+  "47": {
+    "postings": [
+      {
+        "pageIndex": 1,
+        "locs": [
+          -13,
+          11
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "a": {
+    "postings": [
+      {
+        "pageIndex": 0,
+        "locs": [
+          -25,
+          20
+        ],
+        "metaLocs": []
+      },
+      {
+        "pageIndex": 1,
+        "locs": [
+          -25,
+          10
+        ],
+        "metaLocs": []
+      },
+      {
+        "pageIndex": 2,
+        "locs": [
+          -25,
+          19
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "add": {
+    "postings": [
+      {
+        "pageIndex": 0,
+        "locs": [
+          -25,
+          15,
+          8
+        ],
+        "metaLocs": []
+      },
+      {
+        "pageIndex": 2,
+        "locs": [
+          -13,
+          14
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "addit": {
+    "postings": [
+      {
+        "pageIndex": 1,
+        "locs": [
+          -25,
+          18
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "addrecord": {
+    "postings": [
+      {
+        "pageIndex": 2,
+        "locs": [
+          -25,
+          14
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "anchor": {
+    "postings": [
+      {
+        "pageIndex": 2,
+        "locs": [
+          -13,
+          8
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "and": {
+    "postings": [
+      {
+        "pageIndex": 0,
+        "locs": [
+          -25,
+          9,
+          13
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "api": {
+    "postings": [
+      {
+        "pageIndex": 2,
+        "locs": [
+          -169,
+          0
+        ],
+        "metaLocs": [
+          -1,
+          0
+        ]
+      }
+    ],
+    "variants": []
+  },
+  "as": {
+    "postings": [
+      {
+        "pageIndex": 1,
+        "locs": [
+          -25,
+          15
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "async": {
+    "postings": [
+      {
+        "pageIndex": 0,
+        "locs": [
+          -13,
+          11
+        ],
+        "metaLocs": []
+      },
+      {
+        "pageIndex": 2,
+        "locs": [
+          -13,
+          16
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "bcp": {
+    "postings": [
+      {
+        "pageIndex": 1,
+        "locs": [
+          -13,
+          11
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "bcp47": {
+    "postings": [
+      {
+        "pageIndex": 1,
+        "locs": [
+          -25,
+          11
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "call": {
+    "postings": [
+      {
+        "pageIndex": 0,
+        "locs": [
+          -25,
+          10
+        ],
+        "metaLocs": []
+      },
+      {
+        "pageIndex": 2,
+        "locs": [
+          -25,
+          13
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "charact": {
+    "postings": [
+      {
+        "pageIndex": 1,
+        "locs": [
+          -13,
+          4,
+          -25,
+          19,
+          -73,
+          17
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "configur": {
+    "postings": [
+      {
+        "pageIndex": 1,
+        "locs": [
+          -25,
+          1,
+          -169,
+          0
+        ],
+        "metaLocs": [
+          -1,
+          0
+        ]
+      }
+    ],
+    "variants": []
+  },
+  "content": {
+    "postings": [
+      {
+        "pageIndex": 2,
+        "locs": [
+          -25,
+          26
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "creat": {
+    "postings": [
+      {
+        "pageIndex": 0,
+        "locs": [
+          -25,
+          19
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "document": {
+    "postings": [
+      {
+        "pageIndex": 2,
+        "locs": [
+          -25,
+          22
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "dotnet": {
+    "postings": [
+      {
+        "pageIndex": 0,
+        "locs": [
+          -25,
+          14
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "dure": {
+    "postings": [
+      {
+        "pageIndex": 1,
+        "locs": [
+          -25,
+          22
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "en": {
+    "postings": [
+      {
+        "pageIndex": 1,
+        "locs": [
+          -25,
+          16
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "entri": {
+    "postings": [
+      {
+        "pageIndex": 2,
+        "locs": [
+          -25,
+          11
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "for": {
+    "postings": [
+      {
+        "pageIndex": 2,
+        "locs": [
+          -25,
+          4
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "full": {
+    "postings": [
+      {
+        "pageIndex": 2,
+        "locs": [
+          -25,
+          2
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "get": {
+    "postings": [
+      {
+        "pageIndex": 0,
+        "locs": [
+          -13,
+          7,
+          -169,
+          0
+        ],
+        "metaLocs": [
+          -1,
+          0
+        ]
+      }
+    ],
+    "variants": []
+  },
+  "includ": {
+    "postings": [
+      {
+        "pageIndex": 1,
+        "locs": [
+          -13,
+          4,
+          -73,
+          17
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "includecharact": {
+    "postings": [
+      {
+        "pageIndex": 1,
+        "locs": [
+          -25,
+          4,
+          -145,
+          17
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "index": {
+    "postings": [
+      {
+        "pageIndex": 0,
+        "locs": [
+          -13,
+          21
+        ],
+        "metaLocs": []
+      },
+      {
+        "pageIndex": 1,
+        "locs": [
+          -9,
+          2
+        ],
+        "metaLocs": []
+      },
+      {
+        "pageIndex": 2,
+        "locs": [
+          -13,
+          5,
+          -25,
+          21,
+          -73,
+          9
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "instal": {
+    "postings": [
+      {
+        "pageIndex": 0,
+        "locs": [
+          -25,
+          5,
+          -145,
+          12
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "keep": {
+    "postings": [
+      {
+        "pageIndex": 1,
+        "locs": [
+          -25,
+          21
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "languag": {
+    "postings": [
+      {
+        "pageIndex": 1,
+        "locs": [
+          -25,
+          3,
+          5,
+          4,
+          -145,
+          6
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "main": {
+    "postings": [
+      {
+        "pageIndex": 2,
+        "locs": [
+          -25,
+          10
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "net": {
+    "postings": [
+      {
+        "pageIndex": 0,
+        "locs": [
+          -13,
+          4,
+          13
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "nu": {
+    "postings": [
+      {
+        "pageIndex": 0,
+        "locs": [
+          -13,
+          7
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "nuget": {
+    "postings": [
+      {
+        "pageIndex": 0,
+        "locs": [
+          -25,
+          7
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "option": {
+    "postings": [
+      {
+        "pageIndex": 1,
+        "locs": [
+          -9,
+          2
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "packag": {
+    "postings": [
+      {
+        "pageIndex": 0,
+        "locs": [
+          -25,
+          8,
+          8
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "pagefind": {
+    "postings": [
+      {
+        "pageIndex": 0,
+        "locs": [
+          -13,
+          4,
+          13,
+          4
+        ],
+        "metaLocs": []
+      },
+      {
+        "pageIndex": 1,
+        "locs": [
+          -9,
+          2
+        ],
+        "metaLocs": []
+      },
+      {
+        "pageIndex": 2,
+        "locs": [
+          -13,
+          5,
+          1,
+          2,
+          -73,
+          9,
+          8
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "pagefindanchor": {
+    "postings": [
+      {
+        "pageIndex": 2,
+        "locs": [
+          -25,
+          8
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "pagefindindex": {
+    "postings": [
+      {
+        "pageIndex": 0,
+        "locs": [
+          -25,
+          21
+        ],
+        "metaLocs": []
+      },
+      {
+        "pageIndex": 2,
+        "locs": [
+          -25,
+          5,
+          -145,
+          9
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "pagefindindexopt": {
+    "postings": [
+      {
+        "pageIndex": 1,
+        "locs": [
+          -25,
+          2
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "pagefindnet": {
+    "postings": [
+      {
+        "pageIndex": 0,
+        "locs": [
+          -25,
+          4,
+          13
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "pagefindrecord": {
+    "postings": [
+      {
+        "pageIndex": 2,
+        "locs": [
+          -25,
+          6,
+          -145,
+          17
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "point": {
+    "postings": [
+      {
+        "pageIndex": 2,
+        "locs": [
+          -25,
+          12
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "quickstart": {
+    "postings": [
+      {
+        "pageIndex": 0,
+        "locs": [
+          -145,
+          18
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "record": {
+    "postings": [
+      {
+        "pageIndex": 0,
+        "locs": [
+          -25,
+          24
+        ],
+        "metaLocs": []
+      },
+      {
+        "pageIndex": 2,
+        "locs": [
+          -13,
+          6,
+          8,
+          -73,
+          17
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "refer": {
+    "postings": [
+      {
+        "pageIndex": 2,
+        "locs": [
+          -25,
+          3,
+          -169,
+          1
+        ],
+        "metaLocs": [
+          -1,
+          1
+        ]
+      }
+    ],
+    "variants": []
+  },
+  "repres": {
+    "postings": [
+      {
+        "pageIndex": 2,
+        "locs": [
+          -25,
+          18
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "run": {
+    "postings": [
+      {
+        "pageIndex": 0,
+        "locs": [
+          -25,
+          13
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "segment": {
+    "postings": [
+      {
+        "pageIndex": 1,
+        "locs": [
+          -13,
+          5
+        ],
+        "metaLocs": []
+      },
+      {
+        "pageIndex": 2,
+        "locs": [
+          -13,
+          7
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "set": {
+    "postings": [
+      {
+        "pageIndex": 1,
+        "locs": [
+          -25,
+          7
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "singl": {
+    "postings": [
+      {
+        "pageIndex": 2,
+        "locs": [
+          -25,
+          20
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "start": {
+    "postings": [
+      {
+        "pageIndex": 0,
+        "locs": [
+          -169,
+          1
+        ],
+        "metaLocs": [
+          -1,
+          1
+        ]
+      }
+    ],
+    "variants": []
+  },
+  "such": {
+    "postings": [
+      {
+        "pageIndex": 1,
+        "locs": [
+          -25,
+          14
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "tag": {
+    "postings": [
+      {
+        "pageIndex": 1,
+        "locs": [
+          -25,
+          13
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "the": {
+    "postings": [
+      {
+        "pageIndex": 0,
+        "locs": [
+          -25,
+          6
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "then": {
+    "postings": [
+      {
+        "pageIndex": 2,
+        "locs": [
+          -25,
+          15
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "titl": {
+    "postings": [
+      {
+        "pageIndex": 2,
+        "locs": [
+          -25,
+          25
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "to": {
+    "postings": [
+      {
+        "pageIndex": 0,
+        "locs": [
+          -25,
+          3
+        ],
+        "metaLocs": []
+      },
+      {
+        "pageIndex": 1,
+        "locs": [
+          -25,
+          9,
+          11
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "tokenis": {
+    "postings": [
+      {
+        "pageIndex": 1,
+        "locs": [
+          -25,
+          23
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "url": {
+    "postings": [
+      {
+        "pageIndex": 2,
+        "locs": [
+          -25,
+          24
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "weight": {
+    "postings": [
+      {
+        "pageIndex": 1,
+        "locs": [
+          -13,
+          5
+        ],
+        "metaLocs": []
+      },
+      {
+        "pageIndex": 2,
+        "locs": [
+          -13,
+          7
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "weightedseg": {
+    "postings": [
+      {
+        "pageIndex": 1,
+        "locs": [
+          -25,
+          5
+        ],
+        "metaLocs": []
+      },
+      {
+        "pageIndex": 2,
+        "locs": [
+          -25,
+          7
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "welcom": {
+    "postings": [
+      {
+        "pageIndex": 0,
+        "locs": [
+          -25,
+          2
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "with": {
+    "postings": [
+      {
+        "pageIndex": 2,
+        "locs": [
+          -25,
+          23
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "write": {
+    "postings": [
+      {
+        "pageIndex": 0,
+        "locs": [
+          -13,
+          11
+        ],
+        "metaLocs": []
+      },
+      {
+        "pageIndex": 2,
+        "locs": [
+          -13,
+          16
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  },
+  "writeasync": {
+    "postings": [
+      {
+        "pageIndex": 0,
+        "locs": [
+          -25,
+          11
+        ],
+        "metaLocs": []
+      },
+      {
+        "pageIndex": 2,
+        "locs": [
+          -25,
+          16
+        ],
+        "metaLocs": []
+      }
+    ],
+    "variants": []
+  }
+}
