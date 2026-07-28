@@ -94,6 +94,11 @@ public sealed class IndexParityTests
 						.Select(e => e.GetInt32()).ToArray();
 					ourPosting.Locs.Should().BeEquivalentTo(refLocs,
 						$"word '{word}' posting[{i}] locs (weights + positions) mismatch");
+
+					var refMetaLocs = refPosting.GetProperty("metaLocs").EnumerateArray()
+						.Select(e => e.GetInt32()).ToArray();
+					ourPosting.MetaLocs.Should().BeEquivalentTo(refMetaLocs,
+						$"word '{word}' posting[{i}] metaLocs mismatch");
 				}
 			}
 		}

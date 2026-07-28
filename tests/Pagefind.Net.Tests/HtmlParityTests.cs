@@ -85,6 +85,11 @@ public sealed class HtmlParityTests
 						.Select(e => e.GetInt32()).ToArray();
 					ourPosting.Locs.Should().BeEquivalentTo(refLocs,
 						$"word '{word}' posting[{i}] locs (weights + positions) mismatch");
+
+					var refMetaLocs = refPosting.GetProperty("metaLocs").EnumerateArray()
+						.Select(e => e.GetInt32()).ToArray();
+					ourPosting.MetaLocs.Should().BeEquivalentTo(refMetaLocs,
+						$"word '{word}' posting[{i}] metaLocs mismatch");
 				}
 			}
 		}
@@ -119,6 +124,21 @@ public sealed class HtmlParityTests
 				ours.WordCount.Should().Be(theirs.WordCount, $"fragment[{i}] word count mismatch");
 				ours.Meta.Should().BeEquivalentTo(theirs.Meta,
 					$"fragment[{i}] ({ours.Url}) meta mismatch");
+
+				ours.Anchors.Should().HaveCount(theirs.Anchors.Count,
+					$"fragment[{i}] ({ours.Url}) anchor count mismatch");
+
+				for (var a = 0; a < ours.Anchors.Count; a++)
+				{
+					ours.Anchors[a].Element.Should().Be(theirs.Anchors[a].Element,
+						$"fragment[{i}] ({ours.Url}) anchor[{a}] element mismatch");
+					ours.Anchors[a].Id.Should().Be(theirs.Anchors[a].Id,
+						$"fragment[{i}] ({ours.Url}) anchor[{a}] id mismatch");
+					ours.Anchors[a].Text.Should().Be(theirs.Anchors[a].Text,
+						$"fragment[{i}] ({ours.Url}) anchor[{a}] text mismatch");
+					ours.Anchors[a].Location.Should().Be(theirs.Anchors[a].Location,
+						$"fragment[{i}] ({ours.Url}) anchor[{a}] location mismatch");
+				}
 			}
 		}
 		finally { cleanup(); }
