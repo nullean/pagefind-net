@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>pagefind-net — Pagefind search indexing for .NET</title>
+<meta name="description" content="A native .NET port of the Pagefind indexer. Generate search indexes in-process — no subprocess, no shelling out, no platform binaries. Drop-in compatible with the official Pagefind JS/WASM query runtime."/>
+<base href="/"/>
+
+<link rel="icon" type="image/svg+xml" href="images/pagefind-net-mark.svg"/>
+<link rel="icon" type="image/png" sizes="32x32" href="images/png/pagefind-net-mark-32.png"/>
+<link rel="icon" type="image/png" sizes="16x16" href="images/png/pagefind-net-mark-16.png"/>
+<link rel="apple-touch-icon" sizes="180x180" href="images/png/pagefind-net-mark-180.png"/>
+<meta name="theme-color" content="#08090B"/>
+
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:         #08090B;
+    --bg2:        #0D1013;
+    --bg3:        #1B2126;
+    --indigo:     #5B6EFF;
+    --indigo-hi:  #8A97FF;
+    --indigo-dim: #0D1040;
+    --pink:       #FF4D8D;
+    --pink-hi:    #FF8FBC;
+    --pink-dim:   #2D0A1A;
+    --text:       #E9ECF1;
+    --muted:      #98A1AE;
+    --dim:        #5A6472;
+    --line:       rgba(91,110,255,0.10);
+    --line-soft:  rgba(91,110,255,0.055);
+    --mono:       'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --display:    'Space Grotesk', system-ui, sans-serif;
+    --maxw:       1240px;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 15px;
+    line-height: 1.6;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ─── mesh background ─── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-color: var(--bg);
+    background-image:
+      radial-gradient(at 8% 18%,  rgba(91,110,255,0.18) 0px, transparent 55%),
+      radial-gradient(at 92% 6%,  rgba(255,77,141,0.22) 0px, transparent 50%),
+      radial-gradient(at 60% 78%, rgba(255,77,141,0.14) 0px, transparent 55%),
+      radial-gradient(at 22% 88%, rgba(91,110,255,0.07) 0px, transparent 50%),
+      radial-gradient(at 80% 48%, rgba(138,151,255,0.10) 0px, transparent 50%),
+      radial-gradient(at 45% 42%, rgba(91,110,255,0.04) 0px, transparent 45%);
+  }
+
+  nav, section, footer { position: relative; z-index: 1; }
+
+  .inner { max-width: var(--maxw); margin: 0 auto; padding: 0 2.5rem; }
+
+  a { color: inherit; }
+  :focus-visible { outline: 2px solid var(--indigo); outline-offset: 3px; border-radius: 2px; }
+  code { font-family: var(--mono); }
+
+  /* ─────────────────────────  NAV  ───────────────────────── */
+  nav { border-bottom: 1px solid var(--line-soft); }
+  nav .inner {
+    display: flex; align-items: center; gap: 2rem;
+    padding-top: 1.1rem; padding-bottom: 1.1rem;
+  }
+  .nav-logo { display: flex; align-items: center; text-decoration: none; margin-right: auto; }
+  .nav-lockup { display: block; width: 220px; height: 64px; }
+  .nav-links { display: flex; gap: 2rem; list-style: none; }
+  .nav-links a { font-size: 0.8rem; color: var(--muted); text-decoration: none; transition: color .18s; }
+  .nav-links a:hover { color: var(--text); }
+  .nav-cta {
+    font-size: 0.78rem; font-weight: 700; color: var(--indigo);
+    border: 1px solid var(--indigo-dim); padding: 0.45rem 1rem; border-radius: 4px;
+    text-decoration: none; white-space: nowrap;
+    transition: background .18s, color .18s, border-color .18s;
+  }
+  .nav-cta:hover { background: var(--indigo); border-color: var(--indigo); color: var(--bg); }
+
+  /* ─────────────────────────  HERO  ───────────────────────── */
+  .hero .inner {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 3.5rem;
+    align-items: center; padding-top: 4.5rem; padding-bottom: 5.5rem;
+  }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 0.65rem; letter-spacing: 0.10em; text-transform: uppercase;
+    color: var(--indigo); border: 1px solid var(--indigo-dim);
+    background: rgba(91,110,255,0.04);
+    padding: 0.28rem 0.75rem; border-radius: 2px; white-space: nowrap;
+    margin-bottom: 1.5rem;
+  }
+  .badge-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--indigo); animation: pulse 2.4s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: .3 } }
+
+  h1 {
+    font-family: var(--display); font-weight: 700;
+    font-size: clamp(2.4rem, 4.2vw, 4rem); line-height: 1.04; letter-spacing: -0.035em;
+    margin-bottom: 1.4rem;
+  }
+  h1 em { font-style: normal; color: var(--pink-hi); }
+
+  .hero-sub { font-size: 1rem; color: var(--muted); max-width: 34rem; margin-bottom: 1.75rem; }
+  .hero-sub strong { color: var(--text); font-weight: 500; }
+
+  .actions { display: flex; gap: 0.9rem; flex-wrap: wrap; }
+  .btn-primary, .btn-secondary {
+    font-family: var(--mono); font-size: 0.82rem; font-weight: 700;
+    padding: 0.78rem 1.6rem; border-radius: 4px; text-decoration: none;
+    transition: transform .15s, opacity .18s, border-color .18s;
+  }
+  .btn-primary { background: var(--indigo); color: var(--bg); }
+  .btn-primary:hover { opacity: .88; transform: translateY(-1px); }
+  .btn-secondary { color: var(--text); border: 1px solid rgba(233,236,241,0.16); font-weight: 500; }
+  .btn-secondary:hover { border-color: rgba(233,236,241,0.42); transform: translateY(-1px); }
+
+  /* ─────────────────────────  PACKAGE COMMANDS  ───────────────────────── */
+  .pkg-commands { display: flex; flex-direction: column; gap: 0.55rem; margin-bottom: 1.75rem; }
+  .pkg-row { display: flex; align-items: stretch; gap: 0.55rem; }
+  .pkg-row .pkg-cmd { flex: 1; }
+  .pkg-nuget {
+    display: flex; align-items: center; padding: 0 0.85rem;
+    background: var(--bg2); border: 1px solid var(--line);
+    border-radius: 5px; font-size: 0.75rem; font-weight: 700;
+    color: var(--indigo); text-decoration: none; white-space: nowrap;
+    transition: border-color .18s, background .18s;
+  }
+  .pkg-nuget:hover { border-color: rgba(91,110,255,0.28); background: var(--bg3); }
+  .pkg-cmd {
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    background: var(--bg2); border: 1px solid var(--line);
+    border-radius: 5px; padding: 0.7rem 1rem;
+    font-family: var(--mono); font-size: 0.82rem; color: var(--text);
+    cursor: pointer; text-align: left;
+    transition: border-color .18s, background .18s;
+  }
+  .pkg-cmd:hover { border-color: rgba(91,110,255,0.28); background: var(--bg3); }
+  .pkg-cmd.copied { border-color: var(--indigo); }
+  .pkg-cmd-dim { color: var(--dim); }
+  .pkg-cmd-icon { color: var(--dim); font-size: 1rem; flex-shrink: 0; transition: color .18s; }
+  .pkg-cmd:hover .pkg-cmd-icon { color: var(--indigo); }
+
+  /* ─────────────────────────  CODE PANEL  ───────────────────────── */
+  .code-panel {
+    background: var(--bg2); border: 1px solid var(--line);
+    border-radius: 6px; overflow: hidden; margin-bottom: 1.2rem;
+  }
+  .code-panel:last-child { margin-bottom: 0; }
+  .code-panel-head {
+    padding: 0.55rem 1.1rem; font-size: 0.7rem; color: var(--dim);
+    border-bottom: 1px solid var(--line-soft); background: rgba(255,255,255,0.02);
+  }
+  .code-panel pre { padding: 1.1rem 1.25rem; font-size: 0.78rem; line-height: 1.85; overflow-x: auto; font-family: var(--mono); }
+  .c-kw   { color: #C792EA }
+  .c-ns   { color: var(--muted) }
+  .c-type { color: var(--indigo-hi) }
+  .c-key  { color: var(--indigo) }
+  .c-str  { color: #C3E88D }
+  .c-com  { color: var(--dim) }
+  .c-val  { color: #E8B96A }
+  .c-prop { color: var(--pink-hi) }
+
+  /* ─────────────────────────  SECTIONS  ───────────────────────── */
+  .section .inner { padding-top: 5.5rem; padding-bottom: 5.5rem; }
+  .divider { border: none; border-top: 1px solid var(--line-soft); }
+
+  .section-label {
+    font-size: 0.68rem; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--indigo); margin-bottom: 0.9rem;
+  }
+  .section-title {
+    font-family: var(--display); font-weight: 700;
+    font-size: clamp(1.85rem, 3.2vw, 2.7rem); line-height: 1.12; letter-spacing: -0.028em;
+    margin-bottom: 0.9rem;
+  }
+  .section-sub { color: var(--muted); max-width: 38rem; margin-bottom: 3rem; }
+
+  /* ─────────────────────────  GRIDS  ───────────────────────── */
+  .grid-3 {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px;
+    background: var(--line-soft); border: 1px solid var(--line-soft);
+    border-radius: 8px; overflow: hidden;
+  }
+  .grid-2 {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px;
+    background: var(--line-soft); border: 1px solid var(--line-soft);
+    border-radius: 8px; overflow: hidden;
+  }
+  .card {
+    background: var(--bg2); padding: 2rem 1.9rem;
+    text-decoration: none; color: inherit; display: block;
+    transition: background .18s;
+  }
+  .card:hover { background: var(--bg3); }
+  .card-kicker { font-size: 0.68rem; letter-spacing: 0.10em; text-transform: uppercase; color: var(--indigo); margin-bottom: 0.65rem; }
+  .card-kicker.pink { color: var(--pink-hi); }
+  .card-title { font-family: var(--display); font-weight: 700; font-size: 1.1rem; letter-spacing: -0.02em; margin-bottom: 0.75rem; }
+  .card-body { font-size: 0.8rem; color: var(--muted); line-height: 1.75; }
+  .card-more { font-size: 0.75rem; color: var(--indigo); display: inline-block; margin-top: 1rem; }
+
+  /* ─────────────────────────  SPLIT + STEPS  ───────────────────────── */
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 3.5rem; align-items: start; }
+  .steps { display: flex; flex-direction: column; gap: 2rem; }
+  .step { display: flex; gap: 1.2rem; align-items: flex-start; }
+  .step-num { font-family: var(--display); font-weight: 700; font-size: 1.05rem; color: var(--indigo); flex-shrink: 0; width: 2rem; padding-top: 0.1rem; }
+  .step-title { font-family: var(--display); font-weight: 700; font-size: 1rem; letter-spacing: -0.02em; margin-bottom: 0.4rem; }
+  .step-body { font-size: 0.82rem; color: var(--muted); line-height: 1.7; }
+
+  /* ─────────────────────────  CTA + FOOTER  ───────────────────────── */
+  .cta { text-align: center; position: relative; overflow: hidden; }
+  .cta::before {
+    content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    width: 680px; height: 420px; pointer-events: none;
+    background: radial-gradient(ellipse, rgba(91,110,255,0.08) 0%, transparent 68%);
+  }
+  .cta h2 { font-family: var(--display); font-weight: 700; font-size: clamp(2rem, 3.6vw, 3rem); letter-spacing: -0.03em; margin-bottom: 1rem; }
+  .cta h2 em { font-style: normal; color: var(--pink-hi); }
+  .cta p { color: var(--muted); margin-bottom: 2rem; }
+  .cta .actions { justify-content: center; }
+
+  footer { border-top: 1px solid var(--line-soft); }
+  footer .inner {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 1.5rem; flex-wrap: wrap;
+    padding-top: 1.4rem; padding-bottom: 1.4rem; font-size: 0.75rem; color: var(--dim);
+  }
+  footer a { color: var(--muted); text-decoration: none; }
+  footer a:hover { color: var(--indigo); }
+
+  .nullean-link {
+    display: inline-flex; align-items: center; gap: 0; text-decoration: none;
+    border-radius: 6px; overflow: hidden;
+    border: 1px solid rgba(31,158,158,0.35);
+    transition: border-color .18s;
+  }
+  .nullean-link:hover { border-color: rgba(31,158,158,0.7); }
+  .nullean-link svg { display: block; }
+
+  /* ─────────────────────────  REVEAL  ───────────────────────── */
+  .reveal { opacity: 0; transform: translateY(20px); transition: opacity .65s ease, transform .65s ease; }
+  .reveal.visible { opacity: 1; transform: none; }
+
+  /* ─────────────────────────  RESPONSIVE  ───────────────────────── */
+  @media (max-width: 900px) {
+    .inner { padding: 0 1.5rem; }
+    .hero .inner { grid-template-columns: 1fr; gap: 3rem; padding-top: 3rem; padding-bottom: 3.5rem; }
+    .split { grid-template-columns: 1fr; gap: 2.5rem; }
+    .grid-3, .grid-2 { grid-template-columns: 1fr; }
+    .section .inner { padding-top: 3.75rem; padding-bottom: 3.75rem; }
+    .nav-links { display: none; }
+    .cta::before { display: none; }
+  }
+  @media (max-width: 420px) {
+    .actions { flex-direction: column; align-items: stretch; }
+    .btn-primary, .btn-secondary { text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<div hx-boost="false">
+
+<!-- ══════════════  NAV  ══════════════ -->
+<nav>
+  <div class="inner">
+    <a class="nav-logo" href="./" aria-label="pagefind-net home">
+      <img class="nav-lockup" src="images/pagefind-net-lockup.svg" alt="pagefind-net"/>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#features">features</a></li>
+      <li><a href="#quickstart">quick start</a></li>
+      <li><a href="getting-started/">docs</a></li>
+      <li><a href="https://pagefind.app" target="_blank" rel="noopener">pagefind.app ↗</a></li>
+    </ul>
+    <a class="nav-cta" href="https://github.com/nullean/pagefind-net">github →</a>
+  </div>
+</nav>
+
+<!-- ══════════════  HERO  ══════════════ -->
+<section class="hero">
+  <div class="inner">
+    <div>
+      <span class="badge"><span class="badge-dot"></span> .NET · in-process · AOT-safe</span>
+      <h1>Pagefind search<br/>in <em>pure .NET</em>.</h1>
+      <p class="hero-sub">
+        A native .NET port of the <strong>Pagefind indexer</strong> — build search indexes
+        in-process, no subprocess, no shelling out.
+        Compatible with the official <a href="https://pagefind.app" target="_blank" rel="noopener" style="color:var(--pink-hi);text-decoration:none">Pagefind</a> JS/WASM query runtime.
+      </p>
+      <div class="pkg-commands">
+        <div class="pkg-row">
+          <button class="pkg-cmd" data-pkg="Pagefind.Net" onclick="copyPkg(this)">
+            <span class="pkg-cmd-text"><span class="pkg-cmd-dim">dotnet add package </span>Pagefind.Net</span>
+            <span class="pkg-cmd-icon" aria-hidden="true">⎘</span>
+          </button>
+          <a class="pkg-nuget" href="https://www.nuget.org/packages/Pagefind.Net" target="_blank" rel="noopener" title="View on NuGet">nuget ↗</a>
+        </div>
+        <div class="pkg-row">
+          <button class="pkg-cmd" data-pkg="Pagefind.Net.Frontend" onclick="copyPkg(this)">
+            <span class="pkg-cmd-text"><span class="pkg-cmd-dim">dotnet add package </span>Pagefind.Net.Frontend</span>
+            <span class="pkg-cmd-icon" aria-hidden="true">⎘</span>
+          </button>
+          <a class="pkg-nuget" href="https://www.nuget.org/packages/Pagefind.Net.Frontend" target="_blank" rel="noopener" title="View on NuGet">nuget ↗</a>
+        </div>
+      </div>
+      <div class="actions">
+        <a class="btn-primary" href="getting-started/">get started →</a>
+        <a class="btn-secondary" href="https://github.com/nullean/pagefind-net">view on github</a>
+      </div>
+    </div>
+
+    <div>
+      <div class="code-panel">
+        <div class="code-panel-head">build a search index — in process</div>
+<pre><span class="c-kw">using</span> <span class="c-ns">Pagefind.Net</span>;
+
+<span class="c-kw">var</span> index = <span class="c-kw">new</span> <span class="c-type">PagefindIndex</span>(<span class="c-kw">new</span> <span class="c-type">PagefindIndexOptions</span>
+{
+    <span class="c-prop">Language</span> = <span class="c-str">"en"</span>
+});
+
+index.<span class="c-key">AddRecord</span>(<span class="c-kw">new</span> <span class="c-type">PagefindRecord</span>
+{
+    <span class="c-prop">Url</span>     = <span class="c-str">"/guide/"</span>,
+    <span class="c-prop">Title</span>   = <span class="c-str">"Getting started"</span>,
+    <span class="c-prop">Content</span> = plainTextBody,
+    <span class="c-prop">WeightedSegments</span> =
+    [
+        <span class="c-kw">new</span> <span class="c-type">WeightedSegment</span>(h1Text, Weight: <span class="c-val">7</span>),
+        <span class="c-kw">new</span> <span class="c-type">WeightedSegment</span>(bodyText, Weight: <span class="c-val">1</span>),
+    ],
+});
+
+<span class="c-kw">await</span> index.<span class="c-key">WriteAsync</span>(<span class="c-str">"wwwroot"</span>);
+<span class="c-com">// writes pagefind/ — ready for pagefind.js</span></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider"/>
+
+<!-- ══════════════  FEATURES  ══════════════ -->
+<section class="section reveal" id="features">
+  <div class="inner">
+    <p class="section-label">// what you get</p>
+    <h2 class="section-title">Full Pagefind compatibility.<br/>Zero native dependencies.</h2>
+    <p class="section-sub">
+      pagefind-net reimplements the Pagefind indexer in managed C#, producing the same
+      <code>pagefind/</code> directory the official JS/WASM query runtime consumes — byte for byte.
+    </p>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-kicker">in-process</div>
+        <div class="card-title">No subprocess</div>
+        <p class="card-body">
+          Index generation runs inside your .NET process. No binary to locate, no
+          <code>Process.Start</code>, no exit codes to parse. Just a method call.
+        </p>
+      </div>
+      <div class="card">
+        <div class="card-kicker">pagefind 1.5.2</div>
+        <div class="card-title">Byte-compatible<br/>output</div>
+        <p class="card-body">
+          Produces identical <code>.pf_meta</code>, <code>.pf_index</code>, and <code>.pf_fragment</code>
+          files to the official Pagefind binary. The standard <code>pagefind.js</code> query runtime
+          works without modification.
+        </p>
+      </div>
+      <div class="card">
+        <div class="card-kicker">zero allocation hot path</div>
+        <div class="card-title">Built for<br/>throughput</div>
+        <p class="card-body">
+          Zero-allocation tokeniser and stemmer on hot paths.
+          Concurrent <code>AddRecord</code> with O(1) memory pressure and per-record error attribution.
+        </p>
+      </div>
+      <div class="card">
+        <div class="card-kicker pink">aot + trimming</div>
+        <div class="card-title">AOT-ready</div>
+        <p class="card-body">
+          No reflection, no dynamic dispatch. Trims cleanly and publishes as a native binary.
+          AOT-compatible end-to-end — tested on Linux, macOS, and Windows.
+        </p>
+      </div>
+      <div class="card">
+        <div class="card-kicker pink">msbuild</div>
+        <div class="card-title">Frontend<br/>package</div>
+        <p class="card-body">
+          <code>Pagefind.Net.Frontend</code> ships the Pagefind JS/WASM runtime. An MSBuild target
+          auto-extracts the files into your project on build — no manual steps.
+        </p>
+      </div>
+      <div class="card">
+        <div class="card-kicker pink">heading boost · anchors</div>
+        <div class="card-title">Weighted<br/>segments</div>
+        <p class="card-body">
+          Pass <code>WeightedSegments</code> to boost headings and create sub-page anchors —
+          same as the official binary's structured indexing API.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider"/>
+
+<!-- ══════════════  WHY  ══════════════ -->
+<section class="section reveal" id="why">
+  <div class="inner">
+    <p class="section-label">// why pagefind-net</p>
+    <h2 class="section-title">Search that stays<br/>inside your process.</h2>
+    <p class="section-sub">
+      The official Pagefind CLI is a great tool — but calling it from .NET means shelling out:
+      locating a binary, managing a subprocess, parsing exit codes. pagefind-net removes that
+      entirely by running the same logic in-process as a native .NET library.
+    </p>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-kicker">no Process.Start · no path management</div>
+        <div class="card-title">In-process<br/>execution</div>
+        <p class="card-body">
+          Index generation is a method call, not a shell command. No binary to ship alongside
+          your app, no path resolution at runtime, no stdout/stderr to parse. Errors surface as
+          typed .NET exceptions, not process exit codes.
+        </p>
+      </div>
+      <div class="card">
+        <div class="card-kicker">linux · macos · windows · arm</div>
+        <div class="card-title">No platform<br/>restrictions</div>
+        <p class="card-body">
+          The official CLI ships separate platform-specific binaries. pagefind-net runs anywhere
+          .NET runs — any OS, any CPU, any container, any CI runner. One NuGet package,
+          no conditionals, no runtime downloads.
+        </p>
+      </div>
+      <div class="card">
+        <div class="card-kicker">concurrent · per-record errors</div>
+        <div class="card-title">First-class .NET<br/>integration</div>
+        <p class="card-body">
+          <code>AddRecord</code> is safe to call concurrently from multiple threads. Integrate
+          index generation directly into your ASP.NET Core pipeline, Blazor app, or build
+          system — no inter-process coordination required.
+        </p>
+        <a class="card-more" href="getting-started/">integration guide →</a>
+      </div>
+      <div class="card">
+        <div class="card-kicker">e2e parity tests</div>
+        <div class="card-title">Verified<br/>compatibility</div>
+        <p class="card-body">
+          The test suite runs both pagefind-net and the official CLI on the same input and diffs
+          the output. Encoding, tokenization, and file layout are verified byte-for-byte. The
+          query side — <code>pagefind.js</code>, your UI, your search component — stays unchanged.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider"/>
+
+<!-- ══════════════  QUICK START  ══════════════ -->
+<section class="section reveal" id="quickstart">
+  <div class="inner">
+    <p class="section-label">// quick start</p>
+    <h2 class="section-title">Two packages.<br/>Then index your content.</h2>
+    <p class="section-sub">
+      Add the indexer, point it at your documents, call <code>WriteAsync</code>.
+      Add the frontend package and your MSBuild target handles the rest.
+    </p>
+
+    <div class="split">
+      <div>
+        <div class="steps">
+          <div class="step">
+            <div class="step-num">01</div>
+            <div>
+              <div class="step-title">Add the indexer</div>
+              <p class="step-body">
+                <code>dotnet add package Pagefind.Net</code> — targets net9.0 and later.
+                No native or JavaScript transitive dependencies.
+              </p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">02</div>
+            <div>
+              <div class="step-title">Index your documents</div>
+              <p class="step-body">
+                Create a <code>PagefindIndex</code>, call <code>AddRecord</code> for each page —
+                concurrently if you like. Pass <code>WeightedSegments</code> to boost headings
+                and generate per-heading anchors.
+              </p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">03</div>
+            <div>
+              <div class="step-title">Write the index</div>
+              <p class="step-body">
+                Call <code>await index.WriteAsync("wwwroot")</code>. The <code>pagefind/</code>
+                directory is written and ready for the standard Pagefind JS runtime to query.
+              </p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">04</div>
+            <div>
+              <div class="step-title">Ship the frontend</div>
+              <p class="step-body">
+                Add <code>Pagefind.Net.Frontend</code> — an MSBuild target extracts
+                <code>pagefind.js</code> and <code>wasm.en.pagefind</code> into your project automatically.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="code-panel">
+          <div class="code-panel-head">concurrent indexing</div>
+<pre><span class="c-kw">var</span> index = <span class="c-kw">new</span> <span class="c-type">PagefindIndex</span>(
+    <span class="c-kw">new</span> <span class="c-type">PagefindIndexOptions</span> { <span class="c-prop">Language</span> = <span class="c-str">"en"</span> });
+
+<span class="c-com">// AddRecord is thread-safe</span>
+<span class="c-kw">await</span> <span class="c-type">Parallel</span>.<span class="c-key">ForEachAsync</span>(pages, <span class="c-kw">async</span> (page, _) =>
+{
+    index.<span class="c-key">AddRecord</span>(<span class="c-kw">new</span> <span class="c-type">PagefindRecord</span>
+    {
+        <span class="c-prop">Url</span>     = page.Url,
+        <span class="c-prop">Title</span>   = page.Title,
+        <span class="c-prop">Content</span> = page.PlainText,
+        <span class="c-prop">WeightedSegments</span> =
+        [
+            <span class="c-kw">new</span> <span class="c-type">WeightedSegment</span>(page.H1, Weight: <span class="c-val">7</span>),
+            <span class="c-kw">new</span> <span class="c-type">WeightedSegment</span>(page.Body, Weight: <span class="c-val">1</span>),
+        ]
+    });
+});
+
+<span class="c-kw">await</span> index.<span class="c-key">WriteAsync</span>(<span class="c-str">"wwwroot"</span>);</pre>
+        </div>
+
+        <div class="code-panel">
+          <div class="code-panel-head">frontend — programmatic extraction</div>
+<pre><span class="c-kw">using</span> <span class="c-ns">Pagefind.Net.Frontend</span>;
+
+<span class="c-com">// extract pagefind.js + wasm to wwwroot/pagefind</span>
+<span class="c-kw">await</span> <span class="c-type">PagefindFrontend</span>.<span class="c-key">ExtractToAsync</span>(<span class="c-str">"wwwroot"</span>);</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════  CTA  ══════════════ -->
+<section class="section cta reveal">
+  <div class="inner">
+    <h2>In-process.<br/>No subprocess.<br/><em>Pure .NET.</em></h2>
+    <p>One NuGet package. Pagefind search indexing that runs inside your .NET process — no shelling out, no binary to ship.</p>
+    <div class="actions">
+      <a class="btn-primary" href="getting-started/">get started →</a>
+      <a class="btn-secondary" href="https://github.com/nullean/pagefind-net">view on github</a>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════  FOOTER  ══════════════ -->
+<footer>
+  <div class="inner">
+    <span style="display:flex;align-items:center;gap:1rem">
+      <a class="nullean-link" href="https://nullean.net" title="nullean.net">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 36" width="120" height="36" role="img" aria-label="nullean.net">
+          <defs>
+            <linearGradient id="nullBorder" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#1F9E9E"/>
+              <stop offset="1" stop-color="#923A3A"/>
+            </linearGradient>
+          </defs>
+          <rect width="120" height="36" rx="6" fill="url(#nullBorder)"/>
+          <rect x="1" y="1" width="118" height="34" rx="5" fill="#080C0C"/>
+          <text x="12" y="23" font-family="JetBrains Mono, ui-monospace, monospace" font-size="13" font-weight="700" fill="#1F9E9E">&gt; nullean_</text>
+        </svg>
+      </a>
+      <span>pagefind-net — MIT licensed</span>
+    </span>
+    <span>
+      <a href="getting-started/">get started</a> ·
+      <a href="reference/">api reference</a> ·
+      <a href="https://pagefind.app" target="_blank" rel="noopener">pagefind.app ↗</a> ·
+      <a href="https://github.com/nullean/pagefind-net">github</a>
+    </span>
+  </div>
+</footer>
+
+<script>
+  function copyPkg(btn) {
+    var pkg = btn.getAttribute('data-pkg');
+    var text = 'dotnet add package ' + pkg;
+    var icon = btn.querySelector('.pkg-cmd-icon');
+    navigator.clipboard.writeText(text).then(function() {
+      btn.classList.add('copied');
+      icon.textContent = '✓';
+      setTimeout(function() { btn.classList.remove('copied'); icon.textContent = '⎘'; }, 1800);
+    });
+  }
+
+  var els = document.querySelectorAll('.reveal');
+  if (!('IntersectionObserver' in window)) {
+    els.forEach(function(el) { el.classList.add('visible'); });
+  } else {
+    var io = new IntersectionObserver(function(entries) {
+      entries.forEach(function(e) {
+        if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); }
+      });
+    }, { threshold: 0.08 });
+    els.forEach(function(el) { io.observe(el); });
+  }
+</script>
+</div><!-- /hx-boost="false" -->
+</body>
+</html>
