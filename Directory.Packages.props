@@ -26,7 +26,7 @@
   </ItemGroup>
   <ItemGroup>
     <!-- Build script dependencies -->
-    <PackageVersion Include="Argu" Version="6.0.0" />
+    <PackageVersion Include="Argu" Version="6.2.5" />
     <PackageVersion Include="Bullseye" Version="6.0.0" />
     <PackageVersion Include="Proc" Version="0.9.1" />
     <PackageVersion Include="Fake.Tools.Git" Version="5.15.0" />
