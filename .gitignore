@@ -54,3 +54,6 @@ BenchmarkDotNet.Artifacts/
 
 # node
 node_modules/
+
+# Claude Code personal settings
+.claude/settings.local.json
