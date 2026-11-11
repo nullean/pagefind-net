@@ -18,11 +18,9 @@ namespace Pagefind.Net.Tests;
 /// </summary>
 public sealed class IndexParityTests
 {
-	private static readonly string ReferenceDecodedDir =
-		Path.Combine(AppContext.BaseDirectory, "Fixtures", "reference-decoded");
+	private static readonly string ReferenceDecodedDir = Path.Combine(AppContext.BaseDirectory, "Fixtures", "reference-decoded");
 
-	private static readonly string ReferenceDir =
-		Path.Combine(AppContext.BaseDirectory, "Fixtures", "reference-pagefind");
+	private static readonly string ReferenceDir = Path.Combine(AppContext.BaseDirectory, "Fixtures", "reference-pagefind");
 
 	// ── Word List Parity ───────────────────────────────────────────────────────
 
@@ -40,17 +38,16 @@ public sealed class IndexParityTests
 			var refJson = await File.ReadAllTextAsync(refWordsPath);
 			using var refDoc = JsonDocument.Parse(refJson);
 
-			var refWords = refDoc.RootElement.EnumerateObject()
-				.Select(p => p.Name)
-				.Order()
-				.ToList();
+			var refWords = refDoc.RootElement.EnumerateObject().Select(p => p.Name).Order().ToList();
 
 			var ourWords = ourIndex.Keys.Order().ToList();
 
-			ourWords.Should().BeEquivalentTo(refWords,
-				"the .NET indexer should produce the same stemmed word list as the official binary");
+			ourWords.Should().BeEquivalentTo(refWords, "the .NET indexer should produce the same stemmed word list as the official binary");
 		}
-		finally { cleanup(); }
+		finally
+		{
+			cleanup();
+		}
 	}
 
 	// ── Postings Parity ────────────────────────────────────────────────────────
@@ -72,14 +69,12 @@ public sealed class IndexParityTests
 			foreach (var refWord in refDoc.RootElement.EnumerateObject())
 			{
 				var word = refWord.Name;
-				ourIndex.Should().ContainKey(word,
-					$"word '{word}' exists in reference index but not in .NET index");
+				ourIndex.Should().ContainKey(word, $"word '{word}' exists in reference index but not in .NET index");
 
 				var ourEntry = ourIndex[word];
 				var refPostings = refWord.Value.GetProperty("postings");
 
-				ourEntry.Postings.Should().HaveCount(refPostings.GetArrayLength(),
-					$"word '{word}' should have the same number of page postings");
+				ourEntry.Postings.Should().HaveCount(refPostings.GetArrayLength(), $"word '{word}' should have the same number of page postings");
 
 				var refPostingList = refPostings.EnumerateArray().ToList();
 				for (var i = 0; i < ourEntry.Postings.Count; i++)
@@ -87,22 +82,20 @@ public sealed class IndexParityTests
 					var ourPosting = ourEntry.Postings[i];
 					var refPosting = refPostingList[i];
 
-					ourPosting.PageIndex.Should().Be(refPosting.GetProperty("pageIndex").GetInt32(),
-						$"word '{word}' posting[{i}] page index mismatch");
+					ourPosting.PageIndex.Should().Be(refPosting.GetProperty("pageIndex").GetInt32(), $"word '{word}' posting[{i}] page index mismatch");
 
-					var refLocs = refPosting.GetProperty("locs").EnumerateArray()
-						.Select(e => e.GetInt32()).ToArray();
-					ourPosting.Locs.Should().BeEquivalentTo(refLocs,
-						$"word '{word}' posting[{i}] locs (weights + positions) mismatch");
+					var refLocs = refPosting.GetProperty("locs").EnumerateArray().Select(e => e.GetInt32()).ToArray();
+					ourPosting.Locs.Should().BeEquivalentTo(refLocs, $"word '{word}' posting[{i}] locs (weights + positions) mismatch");
 
-					var refMetaLocs = refPosting.GetProperty("metaLocs").EnumerateArray()
-						.Select(e => e.GetInt32()).ToArray();
-					ourPosting.MetaLocs.Should().BeEquivalentTo(refMetaLocs,
-						$"word '{word}' posting[{i}] metaLocs mismatch");
+					var refMetaLocs = refPosting.GetProperty("metaLocs").EnumerateArray().Select(e => e.GetInt32()).ToArray();
+					ourPosting.MetaLocs.Should().BeEquivalentTo(refMetaLocs, $"word '{word}' posting[{i}] metaLocs mismatch");
 				}
 			}
 		}
-		finally { cleanup(); }
+		finally
+		{
+			cleanup();
+		}
 	}
 
 	// ── Fragment Content Parity ────────────────────────────────────────────────
@@ -119,11 +112,9 @@ public sealed class IndexParityTests
 		{
 			var ourFragments = IndexDecoder.ReadAllFragments(Path.Combine(pagefindDir, "fragment"));
 			var refJson = await File.ReadAllTextAsync(refFragmentsPath);
-			var refFragments = JsonSerializer.Deserialize<List<DecodedFragment>>(refJson,
-				DecoderSerializerContext.Default.ListDecodedFragment)!;
+			var refFragments = JsonSerializer.Deserialize<List<DecodedFragment>>(refJson, DecoderSerializerContext.Default.ListDecodedFragment)!;
 
-			ourFragments.Should().HaveCount(refFragments.Count,
-				"should produce the same number of fragments");
+			ourFragments.Should().HaveCount(refFragments.Count, "should produce the same number of fragments");
 
 			for (var i = 0; i < ourFragments.Count; i++)
 			{
@@ -134,11 +125,13 @@ public sealed class IndexParityTests
 				ours.Content.Should().Be(theirs.Content, $"fragment[{i}] content mismatch");
 				ours.WordCount.Should().Be(theirs.WordCount, $"fragment[{i}] word count mismatch");
 
-				ours.Meta.Should().BeEquivalentTo(theirs.Meta,
-					$"fragment[{i}] ({ours.Url}) meta mismatch");
+				ours.Meta.Should().BeEquivalentTo(theirs.Meta, $"fragment[{i}] ({ours.Url}) meta mismatch");
 			}
 		}
-		finally { cleanup(); }
+		finally
+		{
+			cleanup();
+		}
 	}
 
 	// ── Meta Parity ────────────────────────────────────────────────────────────
@@ -162,30 +155,27 @@ public sealed class IndexParityTests
 
 			ourMeta.Version.Should().Be(refMeta.Version, "meta version mismatch");
 
-			ourMeta.Pages.Should().HaveCount(refMeta.Pages.Count,
-				"should have the same number of pages");
+			ourMeta.Pages.Should().HaveCount(refMeta.Pages.Count, "should have the same number of pages");
 
 			for (var i = 0; i < ourMeta.Pages.Count; i++)
 			{
-				ourMeta.Pages[i].WordCount.Should().Be(refMeta.Pages[i].WordCount,
-					$"page[{i}] word count mismatch");
+				ourMeta.Pages[i].WordCount.Should().Be(refMeta.Pages[i].WordCount, $"page[{i}] word count mismatch");
 			}
 
-			ourMeta.Chunks.Should().HaveCount(refMeta.IndexChunks.Count,
-				"should have the same number of index chunks");
+			ourMeta.Chunks.Should().HaveCount(refMeta.IndexChunks.Count, "should have the same number of index chunks");
 
 			for (var i = 0; i < ourMeta.Chunks.Count; i++)
 			{
-				ourMeta.Chunks[i].From.Should().Be(refMeta.IndexChunks[i].From,
-					$"chunk[{i}] 'from' word mismatch");
-				ourMeta.Chunks[i].To.Should().Be(refMeta.IndexChunks[i].To,
-					$"chunk[{i}] 'to' word mismatch");
+				ourMeta.Chunks[i].From.Should().Be(refMeta.IndexChunks[i].From, $"chunk[{i}] 'from' word mismatch");
+				ourMeta.Chunks[i].To.Should().Be(refMeta.IndexChunks[i].To, $"chunk[{i}] 'to' word mismatch");
 			}
 
-			ourMeta.MetaFields.Should().BeEquivalentTo(refMeta.MetaFields,
-				"meta fields should match");
+			ourMeta.MetaFields.Should().BeEquivalentTo(refMeta.MetaFields, "meta fields should match");
 		}
-		finally { cleanup(); }
+		finally
+		{
+			cleanup();
+		}
 	}
 
 	// ── Entry.json Format Parity ───────────────────────────────────────────────
@@ -200,36 +190,30 @@ public sealed class IndexParityTests
 		var (pagefindDir, cleanup) = await BuildAndWriteIndex();
 		try
 		{
-			var ourEntryJson = await File.ReadAllTextAsync(
-				Path.Combine(pagefindDir, "pagefind-entry.json"));
+			var ourEntryJson = await File.ReadAllTextAsync(Path.Combine(pagefindDir, "pagefind-entry.json"));
 			using var ourDoc = JsonDocument.Parse(ourEntryJson);
 
 			var refEntryJson = await File.ReadAllTextAsync(refEntryPath);
 			using var refDoc = JsonDocument.Parse(refEntryJson);
 
 			// Version must match
-			ourDoc.RootElement.GetProperty("version").GetString()
-				.Should().Be(refDoc.RootElement.GetProperty("version").GetString(),
-					"entry.json version mismatch");
+			ourDoc
+				.RootElement
+				.GetProperty("version")
+				.GetString()
+				.Should()
+				.Be(refDoc.RootElement.GetProperty("version").GetString(), "entry.json version mismatch");
 
 			// include_characters must be an array (not a string)
 			var ourInclude = ourDoc.RootElement.GetProperty("include_characters");
-			ourInclude.ValueKind.Should().Be(JsonValueKind.Array,
-				"include_characters should be serialized as a JSON array");
+			ourInclude.ValueKind.Should().Be(JsonValueKind.Array, "include_characters should be serialized as a JSON array");
 
 			var refInclude = refDoc.RootElement.GetProperty("include_characters");
-			var refChars = refInclude.EnumerateArray()
-				.Select(e => e.GetString()!)
-				.Order()
-				.ToList();
+			var refChars = refInclude.EnumerateArray().Select(e => e.GetString()!).Order().ToList();
 
-			var ourChars = ourInclude.EnumerateArray()
-				.Select(e => e.GetString()!)
-				.Order()
-				.ToList();
+			var ourChars = ourInclude.EnumerateArray().Select(e => e.GetString()!).Order().ToList();
 
-			ourChars.Should().BeEquivalentTo(refChars,
-				"include_characters array should contain the same connector chars");
+			ourChars.Should().BeEquivalentTo(refChars, "include_characters array should contain the same connector chars");
 
 			// Language entry structure
 			var ourLangs = ourDoc.RootElement.GetProperty("languages");
@@ -238,12 +222,13 @@ public sealed class IndexParityTests
 
 			var ourEn = ourLangs.GetProperty("en");
 			var refEn = refLangs.GetProperty("en");
-			ourEn.GetProperty("wasm").GetString()
-				.Should().Be(refEn.GetProperty("wasm").GetString(), "wasm field mismatch");
-			ourEn.GetProperty("page_count").GetInt32()
-				.Should().Be(refEn.GetProperty("page_count").GetInt32(), "page_count mismatch");
+			ourEn.GetProperty("wasm").GetString().Should().Be(refEn.GetProperty("wasm").GetString(), "wasm field mismatch");
+			ourEn.GetProperty("page_count").GetInt32().Should().Be(refEn.GetProperty("page_count").GetInt32(), "page_count mismatch");
 		}
-		finally { cleanup(); }
+		finally
+		{
+			cleanup();
+		}
 	}
 
 	// ── Helpers ────────────────────────────────────────────────────────────────
@@ -276,10 +261,7 @@ public sealed class IndexParityTests
 			Url = "/getting-started/",
 			Title = "Getting Started",
 			Content = "Welcome to pagefind-net. Install the NuGet package and call WriteAsync.",
-			WeightedSegments =
-			[
-				new WeightedSegment("Welcome to pagefind-net. Install the NuGet package and call WriteAsync.", Weight: PagefindWeights.Body),
-			],
+			WeightedSegments = [new WeightedSegment("Welcome to pagefind-net. Install the NuGet package and call WriteAsync.", Weight: PagefindWeights.Body),],
 			Meta = new Dictionary<string, string> { ["title"] = "Getting Started" },
 		});
 

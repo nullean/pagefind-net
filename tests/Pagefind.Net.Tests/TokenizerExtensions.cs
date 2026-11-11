@@ -22,7 +22,8 @@ internal static class TokenizerExtensions
 
 	private struct ListSink(List<string> list) : ITokenSink
 	{
-		public void OnWordBoundary() { }
+		public void OnWordBoundary()
+		{ }
 		public void OnToken(scoped ReadOnlySpan<char> token) => list.Add(new string(token));
 		public void OnCompoundPart(scoped ReadOnlySpan<char> token) => list.Add(new string(token));
 	}

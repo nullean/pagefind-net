@@ -58,9 +58,7 @@ public sealed class PagefindIndex
 		_options = options ?? new PagefindIndexOptions();
 		_fs = fileSystem ?? new FileSystem();
 		_batchSize = Math.Max(1, _options.MergeBatchSize);
-		_indexedMetaFields = _options.IndexedMetaFields is { Count: > 0 }
-			? new HashSet<string>(_options.IndexedMetaFields, StringComparer.Ordinal)
-			: null;
+		_indexedMetaFields = _options.IndexedMetaFields is { Count: > 0 } ? new HashSet<string>(_options.IndexedMetaFields, StringComparer.Ordinal) : null;
 		var tokenizer = new Tokenizer(_options.IncludeCharacters);
 		var stemmer = new Stemmer(_options.Language);
 		_builder = new InvertedIndexBuilder(tokenizer, stemmer);
@@ -152,12 +150,15 @@ public sealed class PagefindIndex
 		var sb = new System.Text.StringBuilder();
 		foreach (var section in sections)
 		{
-			if (string.IsNullOrWhiteSpace(section.Text)) continue;
+			if (string.IsNullOrWhiteSpace(section.Text))
+				continue;
 			if (sb.Length > 0)
 			{
 				var lastChar = sb[sb.Length - 1];
-				if (lastChar is '.' or '!' or '?') sb.Append(' ');
-				else sb.Append(". ");
+				if (lastChar is '.' or '!' or '?')
+					sb.Append(' ');
+				else
+					sb.Append(". ");
 			}
 			sb.Append(section.Text);
 		}
@@ -180,7 +181,8 @@ public sealed class PagefindIndex
 		var wordOffset = 0;
 		foreach (var section in sections)
 		{
-			if (string.IsNullOrWhiteSpace(section.Text)) continue;
+			if (string.IsNullOrWhiteSpace(section.Text))
+				continue;
 			var isHeading = section.Tag.Length == 2 && section.Tag[0] is 'h' or 'H' && section.Tag[1] is >= '1' and <= '6';
 			if (isHeading && section.ElementId is not null)
 				anchors.Add(new PagefindAnchor(section.ElementId, section.Text, wordOffset, section.Tag));
@@ -194,7 +196,8 @@ public sealed class PagefindIndex
 		var weights = new List<byte>();
 		foreach (var section in sections)
 		{
-			if (string.IsNullOrWhiteSpace(section.Text)) continue;
+			if (string.IsNullOrWhiteSpace(section.Text))
+				continue;
 			var weight = PagefindWeights.ForTag(section.Tag);
 			var wordCount = CountWords(section.Text);
 			for (var i = 0; i < wordCount; i++)
@@ -246,35 +249,19 @@ public sealed class PagefindIndex
 		}
 
 		// 3. Write index chunk files.
-		var indexChunks = await PagefindWriter.WriteIndexChunksAsync(
-			_fs, pagefindDir, invertedIndex, fieldNameToId, ct);
+		var indexChunks = await PagefindWriter.WriteIndexChunksAsync(_fs, pagefindDir, invertedIndex, fieldNameToId, ct);
 
 		// 4. Write the meta file.
 		var wordCounts = new int[_pages.Count];
 		for (var i = 0; i < _pages.Count; i++)
 			wordCounts[i] = _pages[i].WordCount;
 
-		var (metaHash, metaBytes) = PagefindWriter.BuildMetaCbor(
-			PagefindTargetVersion,
-			pageHashes,
-			wordCounts,
-			indexChunks,
-			metaFields);
+		var (metaHash, metaBytes) = PagefindWriter.BuildMetaCbor(PagefindTargetVersion, pageHashes, wordCounts, indexChunks, metaFields);
 
-		await PagefindWriter.WriteFramedAsync(
-			_fs,
-			Path.Combine(pagefindDir, $"pagefind.{metaHash}.pf_meta"),
-			metaBytes, ct);
+		await PagefindWriter.WriteFramedAsync(_fs, Path.Combine(pagefindDir, $"pagefind.{metaHash}.pf_meta"), metaBytes, ct);
 
 		// 5. Write pagefind-entry.json.
-		await PagefindWriter.WriteEntryJsonAsync(
-			_fs,
-			pagefindDir,
-			_options.Language,
-			metaHash,
-			_pages.Count,
-			_options.IncludeCharacters,
-			ct);
+		await PagefindWriter.WriteEntryJsonAsync(_fs, pagefindDir, _options.Language, metaHash, _pages.Count, _options.IncludeCharacters, ct);
 	}
 
 	private static int CountWords(string content)
@@ -296,8 +283,7 @@ public sealed class PagefindIndex
 		return count;
 	}
 
-	private readonly record struct PendingPage(
-		TokenizedRecord Tokenized, PagefindRecord Record, string FragmentHash, byte[] FragmentBytes, int WordCount);
+	private readonly record struct PendingPage(TokenizedRecord Tokenized, PagefindRecord Record, string FragmentHash, byte[] FragmentBytes, int WordCount);
 
 	/// <summary>
 	/// Lightweight struct holding the pre-computed output for a single page.

@@ -26,8 +26,7 @@ internal static class PagefindWriter
 	/// </summary>
 	internal static async Task WriteFramedAsync(IFileSystem fs, string path, byte[] body, CancellationToken ct)
 	{
-		await using var fileStream = fs.FileStream.New(path, FileMode.Create, FileAccess.Write,
-			FileShare.None, 65536, FileOptions.Asynchronous);
+		await using var fileStream = fs.FileStream.New(path, FileMode.Create, FileAccess.Write, FileShare.None, 65536, FileOptions.Asynchronous);
 		await using var gz = new GZipStream(fileStream, CompressionLevel.Optimal);
 		await gz.WriteAsync(Magic, ct);
 		await gz.WriteAsync(body, ct);
@@ -40,7 +39,8 @@ internal static class PagefindWriter
 		string pagefindDir,
 		SortedDictionary<string, List<PagePosting>> invertedIndex,
 		Dictionary<string, int> fieldNameToId,
-		CancellationToken ct)
+		CancellationToken ct
+	)
 	{
 		if (invertedIndex.Count == 0)
 			return [];
@@ -77,7 +77,8 @@ internal static class PagefindWriter
 		string pagefindDir,
 		List<KeyValuePair<string, List<PagePosting>>> words,
 		Dictionary<string, int> fieldNameToId,
-		CancellationToken ct)
+		CancellationToken ct
+	)
 	{
 		var cbor = BuildIndexCbor(words, fieldNameToId);
 		var hashBytes = SHA256.HashData(cbor);
@@ -86,10 +87,7 @@ internal static class PagefindWriter
 		var path = Path.Combine(pagefindDir, "index", $"{hash}.pf_index");
 		await WriteFramedAsync(fs, path, cbor, ct);
 
-		return new IndexChunkInfo(
-			From: words[0].Key,
-			To: words[^1].Key,
-			Hash: hash);
+		return new IndexChunkInfo(From: words[0].Key, To: words[^1].Key, Hash: hash);
 	}
 
 	// ── CBOR: SearchIndex (.pf_index) ──────────────────────────────────────────
@@ -263,7 +261,8 @@ internal static class PagefindWriter
 		string[] pageHashes,
 		int[] wordCounts,
 		IndexChunkInfo[] indexChunks,
-		string[] metaFields)
+		string[] metaFields
+	)
 	{
 		var w = new CborWriter(CborConformanceMode.Lax);
 
@@ -326,7 +325,18 @@ internal static class PagefindWriter
 	/// <c>pagefind-entry.json</c>, matching the official binary's behaviour.
 	/// </summary>
 	internal static readonly string[] DefaultConnectorCharacters =
-		["_", "\u203F", "\u2040", "\u2054", "\uFE33", "\uFE34", "\uFE4D", "\uFE4E", "\uFE4F", "\uFF3F"];
+	[
+		"_",
+		"\u203F",
+		"\u2040",
+		"\u2054",
+		"\uFE33",
+		"\uFE34",
+		"\uFE4D",
+		"\uFE4E",
+		"\uFE4F",
+		"\uFF3F"
+	];
 
 	internal static async Task WriteEntryJsonAsync(
 		IFileSystem fs,
@@ -335,7 +345,8 @@ internal static class PagefindWriter
 		string metaHash,
 		int pageCount,
 		string includeCharacters,
-		CancellationToken ct)
+		CancellationToken ct
+	)
 	{
 		var chars = BuildIncludeCharactersArray(includeCharacters);
 
@@ -347,7 +358,7 @@ internal static class PagefindWriter
 				[language] = new LanguageEntry
 				{
 					Hash = metaHash,
-					Wasm = language,   // pagefind.js builds: wasm.${wasm}.pagefind
+					Wasm = language, // pagefind.js builds: wasm.${wasm}.pagefind
 					PageCount = pageCount,
 				},
 			},

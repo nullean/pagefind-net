@@ -32,8 +32,7 @@ public sealed class VersionPinTests
 			return;
 		}
 
-		var packageJson = Path.Combine(
-			dir.FullName, "examples", "Pagefind.Net.Example", "package.json");
+		var packageJson = Path.Combine(dir.FullName, "examples", "Pagefind.Net.Example", "package.json");
 
 		if (!File.Exists(packageJson))
 		{
@@ -46,7 +45,9 @@ public sealed class VersionPinTests
 		var deps = doc.RootElement.GetProperty("devDependencies");
 		var pinned = deps.GetProperty("pagefind").GetString();
 
-		pinned.Should().Be(PagefindIndex.PagefindTargetVersion,
-			$"package.json should pin pagefind exactly to PagefindTargetVersion ({PagefindIndex.PagefindTargetVersion})");
+		pinned.Should().Be(
+			PagefindIndex.PagefindTargetVersion,
+			$"package.json should pin pagefind exactly to PagefindTargetVersion ({PagefindIndex.PagefindTargetVersion})"
+		);
 	}
 }

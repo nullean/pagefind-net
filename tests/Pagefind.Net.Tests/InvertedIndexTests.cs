@@ -36,21 +36,21 @@ public sealed class InvertedIndexTests
 	public void MultiPageDeltaEncoding()
 	{
 		var builder = new InvertedIndexBuilder(Tokenizer, Stemmer);
-		AddRecord(builder, 0, new PagefindRecord
-		{
-			Url = "/a/", Title = "A", Content = "search engine",
-			WeightedSegments = [new WeightedSegment("search engine", Weight: 1)],
-		});
-		AddRecord(builder, 1, new PagefindRecord
-		{
-			Url = "/b/", Title = "B", Content = "search results",
-			WeightedSegments = [new WeightedSegment("search results", Weight: 1)],
-		});
-		AddRecord(builder, 2, new PagefindRecord
-		{
-			Url = "/c/", Title = "C", Content = "search query",
-			WeightedSegments = [new WeightedSegment("search query", Weight: 1)],
-		});
+		AddRecord(
+			builder,
+			0,
+			new PagefindRecord { Url = "/a/", Title = "A", Content = "search engine", WeightedSegments = [new WeightedSegment("search engine", Weight: 1)], }
+		);
+		AddRecord(
+			builder,
+			1,
+			new PagefindRecord { Url = "/b/", Title = "B", Content = "search results", WeightedSegments = [new WeightedSegment("search results", Weight: 1)], }
+		);
+		AddRecord(
+			builder,
+			2,
+			new PagefindRecord { Url = "/c/", Title = "C", Content = "search query", WeightedSegments = [new WeightedSegment("search query", Weight: 1)], }
+		);
 
 		var index = builder.Build();
 		// "search" should appear in all three pages.
@@ -66,15 +66,21 @@ public sealed class InvertedIndexTests
 	public void WeightBoostFromSegments()
 	{
 		var builder = new InvertedIndexBuilder(Tokenizer, Stemmer);
-		AddRecord(builder, 0, new PagefindRecord
-		{
-			Url = "/a/", Title = "A", Content = "search engine",
-			WeightedSegments =
-			[
-				new WeightedSegment("search", Weight: 7),  // H1 weight boosts "search"
-				new WeightedSegment("search engine", Weight: 1),  // body (not used for positions)
-			],
-		});
+		AddRecord(
+			builder,
+			0,
+			new PagefindRecord
+			{
+				Url = "/a/",
+				Title = "A",
+				Content = "search engine",
+				WeightedSegments =
+				[
+					new WeightedSegment("search", Weight: 7), // H1 weight boosts "search"
+					new WeightedSegment("search engine", Weight: 1), // body (not used for positions)
+				],
+			}
+		);
 
 		var index = builder.Build();
 		var postings = index["search"];
@@ -94,11 +100,17 @@ public sealed class InvertedIndexTests
 	public void WordsAreSortedAlphabetically()
 	{
 		var builder = new InvertedIndexBuilder(Tokenizer, Stemmer);
-		AddRecord(builder, 0, new PagefindRecord
-		{
-			Url = "/a/", Title = "A", Content = "zebra apple mango",
-			WeightedSegments = [new WeightedSegment("zebra apple mango", Weight: 1)],
-		});
+		AddRecord(
+			builder,
+			0,
+			new PagefindRecord
+			{
+				Url = "/a/",
+				Title = "A",
+				Content = "zebra apple mango",
+				WeightedSegments = [new WeightedSegment("zebra apple mango", Weight: 1)],
+			}
+		);
 
 		var index = builder.Build();
 		var keys = index.Keys.ToList();
@@ -111,9 +123,7 @@ public sealed class InvertedIndexTests
 		const int recordCount = 10_000;
 
 		var fs = new System.IO.Abstractions.TestingHelpers.MockFileSystem();
-		var index = new PagefindIndex(
-			new PagefindIndexOptions { Language = "en" },
-			fs);
+		var index = new PagefindIndex(new PagefindIndexOptions { Language = "en" }, fs);
 
 		var records = new PagefindRecord[recordCount];
 		for (var i = 0; i < recordCount; i++)
@@ -138,18 +148,12 @@ public sealed class InvertedIndexTests
 		var pagefindDir = "/output/pagefind";
 		fs.File.Exists($"{pagefindDir}/pagefind-entry.json").Should().BeTrue();
 		fs.Directory.GetFiles($"{pagefindDir}", "*.pf_meta").Should().HaveCount(1);
-		fs.Directory.GetFiles($"{pagefindDir}/fragment", "*.pf_fragment")
-			.Should().HaveCount(recordCount, $"one fragment per record ({recordCount})");
-		fs.Directory.GetFiles($"{pagefindDir}/index", "*.pf_index")
-			.Should().NotBeEmpty("at least one index chunk is expected");
+		fs.Directory.GetFiles($"{pagefindDir}/fragment", "*.pf_fragment").Should().HaveCount(recordCount, $"one fragment per record ({recordCount})");
+		fs.Directory.GetFiles($"{pagefindDir}/index", "*.pf_index").Should().NotBeEmpty("at least one index chunk is expected");
 
 		var entryJson = fs.File.ReadAllText($"{pagefindDir}/pagefind-entry.json");
 		using var doc = System.Text.Json.JsonDocument.Parse(entryJson);
-		var pageCount = doc.RootElement
-			.GetProperty("languages")
-			.GetProperty("en")
-			.GetProperty("page_count")
-			.GetInt32();
+		var pageCount = doc.RootElement.GetProperty("languages").GetProperty("en").GetProperty("page_count").GetInt32();
 		pageCount.Should().Be(recordCount);
 	}
 

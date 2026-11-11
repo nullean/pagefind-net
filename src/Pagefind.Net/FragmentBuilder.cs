@@ -26,21 +26,16 @@ internal sealed class FragmentBuilder
 			WordCount = CountWords(record.Content),
 			Filters = new Dictionary<string, IReadOnlyList<string>>(record.Filters),
 			Meta = BuildMeta(record),
-			Anchors = record.Anchors
-				.Select(a => new FragmentAnchor
-				{
-					Element = string.IsNullOrEmpty(a.Tag) ? "a" : a.Tag,
-					Id = a.ElementId,
-					Text = a.Text,
-					Location = a.Location,
-				})
+			Anchors = record
+				.Anchors
+				.Select(
+					a => new FragmentAnchor { Element = string.IsNullOrEmpty(a.Tag) ? "a" : a.Tag, Id = a.ElementId, Text = a.Text, Location = a.Location, }
+				)
 				.ToArray(),
 		};
 
 		// Use source-gen overload for AOT/trim safety.
-		var json = JsonSerializer.SerializeToUtf8Bytes(
-			fragment,
-			FragmentSerializerContext.Default.PageFragmentData);
+		var json = JsonSerializer.SerializeToUtf8Bytes(fragment, FragmentSerializerContext.Default.PageFragmentData);
 
 		var hashBytes = SHA256.HashData(json);
 		var hash = Convert.ToHexString(hashBytes)[..8].ToLowerInvariant();
@@ -61,8 +56,13 @@ internal sealed class FragmentBuilder
 		var inWord = false;
 		foreach (var c in content)
 		{
-			if (char.IsWhiteSpace(c)) inWord = false;
-			else if (!inWord) { inWord = true; count++; }
+			if (char.IsWhiteSpace(c))
+				inWord = false;
+			else if (!inWord)
+			{
+				inWord = true;
+				count++;
+			}
 		}
 		return count;
 	}

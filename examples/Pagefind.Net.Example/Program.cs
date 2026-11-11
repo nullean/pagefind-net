@@ -23,15 +23,15 @@ var index = new PagefindIndex(new PagefindIndexOptions { Language = "en" });
 var corpusDir = Path.Combine(appDir, "Corpus");
 if (!Directory.Exists(corpusDir))
 {
-    Console.Error.WriteLine($"Corpus directory not found: {corpusDir}");
-    return 1;
+	Console.Error.WriteLine($"Corpus directory not found: {corpusDir}");
+	return 1;
 }
 
 foreach (var htmlFile in Directory.EnumerateFiles(corpusDir, "*.html"))
 {
-    var doc = CorpusParser.Parse(htmlFile);
-    index.AddRecord(doc);
-    Console.WriteLine($"  Indexed: {doc.Url} ({doc.Title})");
+	var doc = CorpusParser.Parse(htmlFile);
+	index.AddRecord(doc);
+	Console.WriteLine($"  Indexed: {doc.Url} ({doc.Title})");
 }
 
 await index.WriteAsync(wwwroot, CancellationToken.None);
@@ -49,84 +49,98 @@ return 0;
 /// </summary>
 static class CorpusParser
 {
-    public static PagefindRecord Parse(string htmlPath)
-    {
-        var html = File.ReadAllText(htmlPath);
-        var filename = Path.GetFileNameWithoutExtension(htmlPath);
-        var url = $"/{filename}/";
+	public static PagefindRecord Parse(string htmlPath)
+	{
+		var html = File.ReadAllText(htmlPath);
+		var filename = Path.GetFileNameWithoutExtension(htmlPath);
+		var url = $"/{filename}/";
 
-        var title = ExtractTag(html, "h1") ?? filename;
-        var body = StripTags(html);
+		var title = ExtractTag(html, "h1") ?? filename;
+		var body = StripTags(html);
 
-        var segments = new List<WeightedSegment>();
-        var h1 = ExtractTag(html, "h1");
-        if (h1 is not null) segments.Add(new WeightedSegment(h1, Weight: 7));
-        foreach (var h2 in ExtractAllTags(html, "h2"))
-            segments.Add(new WeightedSegment(h2, Weight: 4));
-        segments.Add(new WeightedSegment(body, Weight: 1));
+		var segments = new List<WeightedSegment>();
+		var h1 = ExtractTag(html, "h1");
+		if (h1 is not null)
+			segments.Add(new WeightedSegment(h1, Weight: 7));
+		foreach (var h2 in ExtractAllTags(html, "h2"))
+			segments.Add(new WeightedSegment(h2, Weight: 4));
+		segments.Add(new WeightedSegment(body, Weight: 1));
 
-        var anchors = new List<PagefindAnchor>();
-        var byteOffset = 0;
-        foreach (var h2 in ExtractAllTags(html, "h2"))
-        {
-            var id = Slugify(h2);
-            anchors.Add(new PagefindAnchor(id, h2, byteOffset));
-            byteOffset += System.Text.Encoding.UTF8.GetByteCount(h2);
-        }
+		var anchors = new List<PagefindAnchor>();
+		var byteOffset = 0;
+		foreach (var h2 in ExtractAllTags(html, "h2"))
+		{
+			var id = Slugify(h2);
+			anchors.Add(new PagefindAnchor(id, h2, byteOffset));
+			byteOffset += System.Text.Encoding.UTF8.GetByteCount(h2);
+		}
 
-        return new PagefindRecord
-        {
-            Url = url,
-            Title = title,
-            Content = body,
-            WeightedSegments = segments,
-            Anchors = anchors,
-            Meta = new Dictionary<string, string> { ["title"] = title },
-        };
-    }
+		return new PagefindRecord
+		{
+			Url = url,
+			Title = title,
+			Content = body,
+			WeightedSegments = segments,
+			Anchors = anchors,
+			Meta = new Dictionary<string, string> { ["title"] = title },
+		};
+	}
 
-    private static string? ExtractTag(string html, string tag)
-    {
-        var open = $"<{tag}>";
-        var close = $"</{tag}>";
-        var s = html.IndexOf(open, StringComparison.OrdinalIgnoreCase);
-        if (s < 0) return null;
-        s += open.Length;
-        var e = html.IndexOf(close, s, StringComparison.OrdinalIgnoreCase);
-        return e < 0 ? null : StripTags(html[s..e]).Trim();
-    }
+	private static string? ExtractTag(string html, string tag)
+	{
+		var open = $"<{tag}>";
+		var close = $"</{tag}>";
+		var s = html.IndexOf(open, StringComparison.OrdinalIgnoreCase);
+		if (s < 0)
+			return null;
+		s += open.Length;
+		var e = html.IndexOf(close, s, StringComparison.OrdinalIgnoreCase);
+		return e < 0 ? null : StripTags(html[s..e]).Trim();
+	}
 
-    private static IEnumerable<string> ExtractAllTags(string html, string tag)
-    {
-        var open = $"<{tag}";
-        var close = $"</{tag}>";
-        var pos = 0;
-        while (true)
-        {
-            var s = html.IndexOf(open, pos, StringComparison.OrdinalIgnoreCase);
-            if (s < 0) yield break;
-            var tagEnd = html.IndexOf('>', s);
-            if (tagEnd < 0) yield break;
-            var e = html.IndexOf(close, tagEnd, StringComparison.OrdinalIgnoreCase);
-            if (e < 0) yield break;
-            yield return StripTags(html[(tagEnd + 1)..e]).Trim();
-            pos = e + close.Length;
-        }
-    }
+	private static IEnumerable<string> ExtractAllTags(string html, string tag)
+	{
+		var open = $"<{tag}";
+		var close = $"</{tag}>";
+		var pos = 0;
+		while (true)
+		{
+			var s = html.IndexOf(open, pos, StringComparison.OrdinalIgnoreCase);
+			if (s < 0)
+				yield break;
+			var tagEnd = html.IndexOf('>', s);
+			if (tagEnd < 0)
+				yield break;
+			var e = html.IndexOf(close, tagEnd, StringComparison.OrdinalIgnoreCase);
+			if (e < 0)
+				yield break;
+			yield return StripTags(html[(tagEnd + 1)..e]).Trim();
+			pos = e + close.Length;
+		}
+	}
 
-    private static string StripTags(string html)
-    {
-        var sb = new System.Text.StringBuilder();
-        var inTag = false;
-        foreach (var c in html)
-        {
-            if (c == '<') { inTag = true; continue; }
-            if (c == '>') { inTag = false; sb.Append(' '); continue; }
-            if (!inTag) sb.Append(c);
-        }
-        return System.Text.RegularExpressions.Regex.Replace(sb.ToString(), @"\s+", " ").Trim();
-    }
+	private static string StripTags(string html)
+	{
+		var sb = new System.Text.StringBuilder();
+		var inTag = false;
+		foreach (var c in html)
+		{
+			if (c == '<')
+			{
+				inTag = true;
+				continue;
+			}
+			if (c == '>')
+			{
+				inTag = false;
+				sb.Append(' ');
+				continue;
+			}
+			if (!inTag)
+				sb.Append(c);
+		}
+		return System.Text.RegularExpressions.Regex.Replace(sb.ToString(), @"\s+", " ").Trim();
+	}
 
-    private static string Slugify(string text) =>
-        System.Text.RegularExpressions.Regex.Replace(text.ToLowerInvariant(), @"[^a-z0-9]+", "-").Trim('-');
+	private static string Slugify(string text) => System.Text.RegularExpressions.Regex.Replace(text.ToLowerInvariant(), @"[^a-z0-9]+", "-").Trim('-');
 }

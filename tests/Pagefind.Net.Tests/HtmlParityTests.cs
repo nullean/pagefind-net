@@ -16,8 +16,7 @@ namespace Pagefind.Net.Tests;
 /// </summary>
 public sealed class HtmlParityTests
 {
-	private static readonly string ReferenceHtmlDir =
-		Path.Combine(AppContext.BaseDirectory, "Fixtures", "reference-html-decoded");
+	private static readonly string ReferenceHtmlDir = Path.Combine(AppContext.BaseDirectory, "Fixtures", "reference-html-decoded");
 
 	[Test]
 	public async Task HtmlWordListMatchesOfficialBinary()
@@ -33,17 +32,16 @@ public sealed class HtmlParityTests
 			var refJson = await File.ReadAllTextAsync(refWordsPath);
 			using var refDoc = JsonDocument.Parse(refJson);
 
-			var refWords = refDoc.RootElement.EnumerateObject()
-				.Select(p => p.Name)
-				.Order()
-				.ToList();
+			var refWords = refDoc.RootElement.EnumerateObject().Select(p => p.Name).Order().ToList();
 
 			var ourWords = ourIndex.Keys.Order().ToList();
 
-			ourWords.Should().BeEquivalentTo(refWords,
-				"AddHtmlRecord should produce the same stemmed word list as addHTMLFile");
+			ourWords.Should().BeEquivalentTo(refWords, "AddHtmlRecord should produce the same stemmed word list as addHTMLFile");
 		}
-		finally { cleanup(); }
+		finally
+		{
+			cleanup();
+		}
 	}
 
 	[Test]
@@ -63,14 +61,12 @@ public sealed class HtmlParityTests
 			foreach (var refWord in refDoc.RootElement.EnumerateObject())
 			{
 				var word = refWord.Name;
-				ourIndex.Should().ContainKey(word,
-					$"word '{word}' exists in HTML reference but not in AddHtmlRecord output");
+				ourIndex.Should().ContainKey(word, $"word '{word}' exists in HTML reference but not in AddHtmlRecord output");
 
 				var ourEntry = ourIndex[word];
 				var refPostings = refWord.Value.GetProperty("postings");
 
-				ourEntry.Postings.Should().HaveCount(refPostings.GetArrayLength(),
-					$"word '{word}' should have the same number of page postings");
+				ourEntry.Postings.Should().HaveCount(refPostings.GetArrayLength(), $"word '{word}' should have the same number of page postings");
 
 				var refPostingList = refPostings.EnumerateArray().ToList();
 				for (var i = 0; i < ourEntry.Postings.Count; i++)
@@ -78,22 +74,20 @@ public sealed class HtmlParityTests
 					var ourPosting = ourEntry.Postings[i];
 					var refPosting = refPostingList[i];
 
-					ourPosting.PageIndex.Should().Be(refPosting.GetProperty("pageIndex").GetInt32(),
-						$"word '{word}' posting[{i}] page index mismatch");
+					ourPosting.PageIndex.Should().Be(refPosting.GetProperty("pageIndex").GetInt32(), $"word '{word}' posting[{i}] page index mismatch");
 
-					var refLocs = refPosting.GetProperty("locs").EnumerateArray()
-						.Select(e => e.GetInt32()).ToArray();
-					ourPosting.Locs.Should().BeEquivalentTo(refLocs,
-						$"word '{word}' posting[{i}] locs (weights + positions) mismatch");
+					var refLocs = refPosting.GetProperty("locs").EnumerateArray().Select(e => e.GetInt32()).ToArray();
+					ourPosting.Locs.Should().BeEquivalentTo(refLocs, $"word '{word}' posting[{i}] locs (weights + positions) mismatch");
 
-					var refMetaLocs = refPosting.GetProperty("metaLocs").EnumerateArray()
-						.Select(e => e.GetInt32()).ToArray();
-					ourPosting.MetaLocs.Should().BeEquivalentTo(refMetaLocs,
-						$"word '{word}' posting[{i}] metaLocs mismatch");
+					var refMetaLocs = refPosting.GetProperty("metaLocs").EnumerateArray().Select(e => e.GetInt32()).ToArray();
+					ourPosting.MetaLocs.Should().BeEquivalentTo(refMetaLocs, $"word '{word}' posting[{i}] metaLocs mismatch");
 				}
 			}
 		}
-		finally { cleanup(); }
+		finally
+		{
+			cleanup();
+		}
 	}
 
 	[Test]
@@ -108,11 +102,9 @@ public sealed class HtmlParityTests
 		{
 			var ourFragments = IndexDecoder.ReadAllFragments(Path.Combine(pagefindDir, "fragment"));
 			var refJson = await File.ReadAllTextAsync(refFragmentsPath);
-			var refFragments = JsonSerializer.Deserialize<List<DecodedFragment>>(refJson,
-				DecoderSerializerContext.Default.ListDecodedFragment)!;
+			var refFragments = JsonSerializer.Deserialize<List<DecodedFragment>>(refJson, DecoderSerializerContext.Default.ListDecodedFragment)!;
 
-			ourFragments.Should().HaveCount(refFragments.Count,
-				"should produce the same number of fragments");
+			ourFragments.Should().HaveCount(refFragments.Count, "should produce the same number of fragments");
 
 			for (var i = 0; i < ourFragments.Count; i++)
 			{
@@ -122,26 +114,23 @@ public sealed class HtmlParityTests
 				ours.Url.Should().Be(theirs.Url, $"fragment[{i}] URL mismatch");
 				ours.Content.Should().Be(theirs.Content, $"fragment[{i}] content mismatch");
 				ours.WordCount.Should().Be(theirs.WordCount, $"fragment[{i}] word count mismatch");
-				ours.Meta.Should().BeEquivalentTo(theirs.Meta,
-					$"fragment[{i}] ({ours.Url}) meta mismatch");
+				ours.Meta.Should().BeEquivalentTo(theirs.Meta, $"fragment[{i}] ({ours.Url}) meta mismatch");
 
-				ours.Anchors.Should().HaveCount(theirs.Anchors.Count,
-					$"fragment[{i}] ({ours.Url}) anchor count mismatch");
+				ours.Anchors.Should().HaveCount(theirs.Anchors.Count, $"fragment[{i}] ({ours.Url}) anchor count mismatch");
 
 				for (var a = 0; a < ours.Anchors.Count; a++)
 				{
-					ours.Anchors[a].Element.Should().Be(theirs.Anchors[a].Element,
-						$"fragment[{i}] ({ours.Url}) anchor[{a}] element mismatch");
-					ours.Anchors[a].Id.Should().Be(theirs.Anchors[a].Id,
-						$"fragment[{i}] ({ours.Url}) anchor[{a}] id mismatch");
-					ours.Anchors[a].Text.Should().Be(theirs.Anchors[a].Text,
-						$"fragment[{i}] ({ours.Url}) anchor[{a}] text mismatch");
-					ours.Anchors[a].Location.Should().Be(theirs.Anchors[a].Location,
-						$"fragment[{i}] ({ours.Url}) anchor[{a}] location mismatch");
+					ours.Anchors[a].Element.Should().Be(theirs.Anchors[a].Element, $"fragment[{i}] ({ours.Url}) anchor[{a}] element mismatch");
+					ours.Anchors[a].Id.Should().Be(theirs.Anchors[a].Id, $"fragment[{i}] ({ours.Url}) anchor[{a}] id mismatch");
+					ours.Anchors[a].Text.Should().Be(theirs.Anchors[a].Text, $"fragment[{i}] ({ours.Url}) anchor[{a}] text mismatch");
+					ours.Anchors[a].Location.Should().Be(theirs.Anchors[a].Location, $"fragment[{i}] ({ours.Url}) anchor[{a}] location mismatch");
 				}
 			}
 		}
-		finally { cleanup(); }
+		finally
+		{
+			cleanup();
+		}
 	}
 
 	[Test]
@@ -162,16 +151,17 @@ public sealed class HtmlParityTests
 			var refMeta = JsonSerializer.Deserialize<DecodedMetaJson>(refJson)!;
 
 			ourMeta.Version.Should().Be(refMeta.Version, "meta version mismatch");
-			ourMeta.Pages.Should().HaveCount(refMeta.Pages.Count,
-				"should have the same number of pages");
+			ourMeta.Pages.Should().HaveCount(refMeta.Pages.Count, "should have the same number of pages");
 
 			for (var i = 0; i < ourMeta.Pages.Count; i++)
 			{
-				ourMeta.Pages[i].WordCount.Should().Be(refMeta.Pages[i].WordCount,
-					$"page[{i}] word count mismatch");
+				ourMeta.Pages[i].WordCount.Should().Be(refMeta.Pages[i].WordCount, $"page[{i}] word count mismatch");
 			}
 		}
-		finally { cleanup(); }
+		finally
+		{
+			cleanup();
+		}
 	}
 
 	// ── Helpers ────────────────────────────────────────────────────────────────

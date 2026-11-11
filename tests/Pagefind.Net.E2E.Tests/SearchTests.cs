@@ -20,19 +20,19 @@ public sealed class SearchTests(SearchFixture fixture)
 		var page = await fixture.BrowserContext!.NewPageAsync();
 		await page.GotoAsync("/");
 
-		await page.WaitForFunctionAsync("() => typeof window.pagefind !== 'undefined'",
-			null, new() { Timeout = 10_000 });
+		await page.WaitForFunctionAsync("() => typeof window.pagefind !== 'undefined'", null, new() { Timeout = 10_000 });
 
-		var results = await page.EvaluateAsync<string[]>("""
+		var results = await page.EvaluateAsync<string[]>(
+			"""
 			async () => {
 				const { results } = await window.pagefind.search("install");
 				const data = await Promise.all(results.slice(0, 5).map(r => r.data()));
 				return data.map(d => d.url);
 			}
-		""");
+		"""
+		);
 
-		results.Should().Contain("/getting-started/",
-			"'install' appears in the Getting Started page");
+		results.Should().Contain("/getting-started/", "'install' appears in the Getting Started page");
 		await page.CloseAsync();
 	}
 
@@ -42,19 +42,19 @@ public sealed class SearchTests(SearchFixture fixture)
 		var page = await fixture.BrowserContext!.NewPageAsync();
 		await page.GotoAsync("/");
 
-		await page.WaitForFunctionAsync("() => typeof window.pagefind !== 'undefined'",
-			null, new() { Timeout = 10_000 });
+		await page.WaitForFunctionAsync("() => typeof window.pagefind !== 'undefined'", null, new() { Timeout = 10_000 });
 
-		var results = await page.EvaluateAsync<string[]>("""
+		var results = await page.EvaluateAsync<string[]>(
+			"""
 			async () => {
 				const { results } = await window.pagefind.search("language");
 				const data = await Promise.all(results.slice(0, 5).map(r => r.data()));
 				return data.map(d => d.url);
 			}
-		""");
+		"""
+		);
 
-		results.Should().Contain("/configuration/",
-			"'language' appears in the Configuration page");
+		results.Should().Contain("/configuration/", "'language' appears in the Configuration page");
 		await page.CloseAsync();
 	}
 
@@ -64,19 +64,19 @@ public sealed class SearchTests(SearchFixture fixture)
 		var page = await fixture.BrowserContext!.NewPageAsync();
 		await page.GotoAsync("/");
 
-		await page.WaitForFunctionAsync("() => typeof window.pagefind !== 'undefined'",
-			null, new() { Timeout = 10_000 });
+		await page.WaitForFunctionAsync("() => typeof window.pagefind !== 'undefined'", null, new() { Timeout = 10_000 });
 
-		var results = await page.EvaluateAsync<string[]>("""
+		var results = await page.EvaluateAsync<string[]>(
+			"""
 			async () => {
 				const { results } = await window.pagefind.search("api");
 				const data = await Promise.all(results.slice(0, 5).map(r => r.data()));
 				return data.map(d => d.url);
 			}
-		""");
+		"""
+		);
 
-		results.Should().Contain("/api-reference/",
-			"'api' appears in the API Reference page heading");
+		results.Should().Contain("/api-reference/", "'api' appears in the API Reference page heading");
 		await page.CloseAsync();
 	}
 
@@ -86,15 +86,16 @@ public sealed class SearchTests(SearchFixture fixture)
 		var page = await fixture.BrowserContext!.NewPageAsync();
 		await page.GotoAsync("/");
 
-		await page.WaitForFunctionAsync("() => typeof window.pagefind !== 'undefined'",
-			null, new() { Timeout = 10_000 });
+		await page.WaitForFunctionAsync("() => typeof window.pagefind !== 'undefined'", null, new() { Timeout = 10_000 });
 
-		var count = await page.EvaluateAsync<int>("""
+		var count = await page.EvaluateAsync<int>(
+			"""
 			async () => {
 				const { results } = await window.pagefind.search("xyzzyfrob");
 				return results.length;
 			}
-		""");
+		"""
+		);
 
 		count.Should().Be(0, "a nonsense term should not match any pages");
 		await page.CloseAsync();
@@ -106,19 +107,19 @@ public sealed class SearchTests(SearchFixture fixture)
 		var page = await fixture.BrowserContext!.NewPageAsync();
 		await page.GotoAsync("/");
 
-		await page.WaitForFunctionAsync("() => typeof window.pagefind !== 'undefined'",
-			null, new() { Timeout = 10_000 });
+		await page.WaitForFunctionAsync("() => typeof window.pagefind !== 'undefined'", null, new() { Timeout = 10_000 });
 
-		var results = await page.EvaluateAsync<string[]>("""
+		var results = await page.EvaluateAsync<string[]>(
+			"""
 			async () => {
 				const { results } = await window.pagefind.search("performance");
 				const data = await Promise.all(results.slice(0, 5).map(r => r.data()));
 				return data.map(d => d.url);
 			}
-		""");
+		"""
+		);
 
-		results.Should().Contain("/performance/",
-			"'performance' appears in the Performance page");
+		results.Should().Contain("/performance/", "'performance' appears in the Performance page");
 		await page.CloseAsync();
 	}
 }
