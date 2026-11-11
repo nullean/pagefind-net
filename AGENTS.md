@@ -28,9 +28,10 @@ and tests target. The everyday tasks have the same names as in every nullean rep
 mise run build            # build the solution
 mise run test             # build, then run the unit and E2E tests
 mise run pack             # build, pack the NuGet packages and validate them
-mise run ci               # what CI's build job runs: test, then pack, validate and diff the public API
+mise run ci               # what CI's build job runs: test, curb check, then pack, validate and diff the public API
 mise run docs             # build the docs and serve them
-mise run check            # workflow security checks (zizmor)
+mise run format           # format the repository with curb
+mise run check            # formatting drift (curb) and workflow security checks (zizmor)
 mise run clean            # delete build output
 mise run release          # show the release draft; `mise run release publish` releases
 ```
