@@ -1,53 +1,49 @@
 # Pagefind.Net.Frontend
 
-Ships the Pagefind browser query runtime (`pagefind.js` and `wasm.en.pagefind`) as embedded resources. An MSBuild target automatically extracts the files into your project on build -- no npm install required.
+![pagefind.net](https://raw.githubusercontent.com/nullean/pagefind-net/main/docs/images/png/pagefind-net-mark-180.png)
 
-**Ships Pagefind 1.5.2 runtime.**
+Ships the Pagefind 1.5.2 browser query runtime (`pagefind.js` and `wasm.en.pagefind`) for indexes written by Pagefind.Net. An MSBuild target extracts the files into your project on build: no npm install required.
 
-## Automatic extraction
+[![NuGet](https://img.shields.io/nuget/v/Pagefind.Net.Frontend?style=flat-square)](https://www.nuget.org/packages/Pagefind.Net.Frontend)
 
-Install the package and the frontend files appear in `wwwroot/pagefind/` after every build:
+## Install
 
-```shell
+```sh
 dotnet add package Pagefind.Net.Frontend
 ```
 
-The output path is configurable in your `.csproj`:
+## Quick start
+
+Install the package and the frontend files appear in `wwwroot/pagefind/` after every build. The output path is
+configurable in your `.csproj`, and extraction can be turned off:
 
 ```xml
 <PropertyGroup>
   <PagefindFrontendOutputPath>wwwroot/pagefind</PagefindFrontendOutputPath>
+  <!-- <PagefindFrontendDisableExtract>true</PagefindFrontendDisableExtract> -->
 </PropertyGroup>
 ```
 
-To disable automatic extraction entirely:
-
-```xml
-<PropertyGroup>
-  <PagefindFrontendDisableExtract>true</PagefindFrontendDisableExtract>
-</PropertyGroup>
-```
-
-## Programmatic API
-
-Extract the runtime files from code using `PagefindFrontend.ExtractToAsync`:
+Or extract from code:
 
 ```csharp
 using Pagefind.Net.Frontend;
 
+// Writes pagefind.js and wasm.en.pagefind, unless the same version is already there (force: true overwrites).
 string[] written = await PagefindFrontend.ExtractToAsync("wwwroot/pagefind");
 ```
 
-The method writes files only when the embedded version is newer than what is already on disk (tracked via a version marker file). Pass `force: true` to always overwrite.
-
 An overload accepting `IFileSystem` is available for testing.
 
-## ASP.NET integration
+## ASP.NET
 
-ASP.NET does not recognize Pagefind's custom file extensions by default. Register them in your static file middleware:
+ASP.NET does not recognise Pagefind's file extensions. Register them in your static file middleware, or the Pagefind
+runtime gets 404 responses when loading index data:
 
 ```csharp
 using Microsoft.AspNetCore.StaticFiles;
+
+var app = WebApplication.CreateBuilder(args).Build();
 
 var contentTypeProvider = new FileExtensionContentTypeProvider();
 contentTypeProvider.Mappings[".pf_meta"] = "application/octet-stream";
@@ -56,10 +52,12 @@ contentTypeProvider.Mappings[".pf_fragment"] = "application/octet-stream";
 contentTypeProvider.Mappings[".pagefind"] = "application/wasm";
 
 app.UseStaticFiles(new StaticFileOptions { ContentTypeProvider = contentTypeProvider });
+app.Run();
 ```
 
-Without these mappings, the Pagefind JS runtime will receive 404 responses when loading index data.
+More: https://pagefind.nullean.net/getting-started/asp-net/ and https://pagefind.nullean.net/reference/frontend/
 
-## Documentation
+## Learn more
 
-Full documentation: [nullean.github.io/pagefind-net](https://nullean.github.io/pagefind-net/)
+- Documentation: https://pagefind.nullean.net
+- Source and issues: https://github.com/nullean/pagefind-net
