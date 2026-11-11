@@ -77,8 +77,16 @@ jobs:
     - run: ./build.sh build -s true
       name: Build
 
+    # apt on the hosted runners sometimes can't resolve the Ubuntu mirror for minutes at a time; retry before failing
     - name: Install Playwright system dependencies
-      run: pwsh .artifacts/bin/Pagefind.Net.E2E.Tests/release/playwright.ps1 install-deps chromium
+      shell: bash
+      run: |
+        for attempt in 1 2 3 4 5; do
+          pwsh .artifacts/bin/Pagefind.Net.E2E.Tests/release/playwright.ps1 install-deps chromium && exit 0
+          echo "::warning::install-deps failed (attempt $attempt), retrying in 30s"
+          sleep 30
+        done
+        exit 1
 
     - name: Install Playwright browsers
       run: pwsh .artifacts/bin/Pagefind.Net.E2E.Tests/release/playwright.ps1 install chromium
