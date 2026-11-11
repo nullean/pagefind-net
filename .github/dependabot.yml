@@ -1,33 +1,49 @@
 version: 2
 updates:
   - package-ecosystem: nuget
-    directory: "/"
+    directory: /
     schedule:
       interval: weekly
     cooldown:
       default-days: 7
     open-pull-requests-limit: 5
+    labels: [dependencies]
+    groups:
+      nuget:
+        patterns: ["*"]
 
   - package-ecosystem: npm
-    directory: "/examples/Pagefind.Net.Example"
+    directory: /examples/Pagefind.Net.Web
     schedule:
       interval: weekly
     cooldown:
       default-days: 7
     open-pull-requests-limit: 3
+    labels: [dependencies]
+    groups:
+      npm-web:
+        patterns: ["*"]
 
   - package-ecosystem: npm
-    directory: "/tests/Pagefind.Net.Tests"
+    directory: /tests/Pagefind.Net.Tests
     schedule:
       interval: weekly
     cooldown:
       default-days: 7
     open-pull-requests-limit: 3
+    labels: [dependencies]
+    groups:
+      npm-tests:
+        patterns: ["*"]
 
   - package-ecosystem: github-actions
-    directory: "/"
+    directory: /
     schedule:
       interval: weekly
     cooldown:
       default-days: 7
     open-pull-requests-limit: 5
+    labels: [dependencies]
+    groups:
+      actions:
+        patterns: ["*"]
