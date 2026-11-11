@@ -1,0 +1,12 @@
+# The shared .editorconfig asks for LF in C# files and the build enforces it (IDE0055), so Windows checkouts must not
+# convert line endings.
+* text=auto eol=lf
+*.cs text diff=csharp
+*.bat text eol=crlf
+*.png binary
+*.woff2 binary
+*.gz binary
+*.pagefind binary
+*.pf_fragment binary
+*.pf_index binary
+*.pf_meta binary
