@@ -1,0 +1,12 @@
+- link "API Reference"
+- StaticText "/api-reference/"
+- StaticText "Complete reference for the public "
+- mark
+  - StaticText "API:"
+- StaticText " PagefindIndex, PagefindRecord, WeightedSegment, PagefindAnchor, and PagefindIndexOptions."
+- link "Performance"
+- StaticText "/performance/"
+- StaticText "Performance: pagefind-net is designed for zero-allocation hot paths. The tokeniser uses a push-based span "
+- mark
+  - StaticText "API,"
+- StaticText " the stemmer operates entirely on stack buffers."

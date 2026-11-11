@@ -2,13 +2,15 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <RootNamespace>Pagefind.Net.E2E.Tests</RootNamespace>
-    <Description>Playwright E2E tests: hosts the Pagefind.Net.Web app on a random port and verifies search via Playwright.</Description>
+    <Description>E2E tests: hosts the Pagefind.Net.Web app on a random port and searches it in the installed Chrome (Nullean.Cdp), snapshotting the rendered results with Nullean.Snapshots.</Description>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="TUnit" />
     <PackageReference Include="AwesomeAssertions" />
-    <PackageReference Include="Microsoft.Playwright" />
+    <PackageReference Include="Nullean.Cdp" />
+    <PackageReference Include="Nullean.Snapshots.Browser.Assertions" />
+    <PackageReference Include="Nullean.Snapshots.TUnit" />
     <PackageReference Include="GitHubActionsTestLogger" />
   </ItemGroup>
   <ItemGroup>

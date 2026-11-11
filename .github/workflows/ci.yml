@@ -80,12 +80,6 @@ jobs:
     - name: Check formatting (curb)
       run: dotnet tool restore && dotnet curb check .
 
-    - name: Install Playwright system dependencies
-      run: pwsh .artifacts/bin/Pagefind.Net.E2E.Tests/release/playwright.ps1 install-deps chromium
-
-    - name: Install Playwright browsers
-      run: pwsh .artifacts/bin/Pagefind.Net.E2E.Tests/release/playwright.ps1 install chromium
-
     - run: ./build.sh test -s true
       name: Test
     - run: ./build.sh generatepackages -s true

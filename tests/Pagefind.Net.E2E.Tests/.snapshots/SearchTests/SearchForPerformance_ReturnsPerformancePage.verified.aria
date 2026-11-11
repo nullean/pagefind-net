@@ -1,0 +1,5 @@
+- link "Performance"
+- StaticText "/performance/"
+- mark
+  - StaticText "Performance:"
+- StaticText " pagefind-net is designed for zero-allocation hot paths. The tokeniser uses a push-based span API, the stemmer operates entirely on stack buffers."
