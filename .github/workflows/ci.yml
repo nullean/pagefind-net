@@ -84,6 +84,11 @@ jobs:
         for attempt in 1 2 3 4 5; do
           pwsh .artifacts/bin/Pagefind.Net.E2E.Tests/release/playwright.ps1 install-deps chromium && exit 0
           echo "::warning::install-deps failed (attempt $attempt), retrying in 30s"
+          # the runner's Azure mirror is what stops resolving: fall back to the main Ubuntu archive after the first failure
+          if [ "$attempt" = 1 ] && [ -f /etc/apt/apt-mirrors.txt ]; then
+            echo "::warning::switching apt from the Azure mirror to archive.ubuntu.com"
+            echo "http://archive.ubuntu.com/ubuntu/" | sudo tee /etc/apt/apt-mirrors.txt > /dev/null
+          fi
           sleep 30
         done
         exit 1
