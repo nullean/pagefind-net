@@ -15,6 +15,10 @@ native binaries and no subprocess. It targets Pagefind 1.5.2 (`PagefindIndex.Pag
 | `build/scripts` | The F# build (Bullseye + Argu); `./build.sh <target>` runs it. |
 | `docs/`, `scripts/` | The docs-builder site and its post-build scripts. |
 
+Package versions live in `Directory.Packages.props` and package metadata in `Directory.Build.props`. Each package
+ships an agent skill, `src/<Project>/skills/<name>/SKILL.md`: when the public API changes, update its skill, and
+compile any snippet you change.
+
 ## Build and test
 
 `mise install` provides the toolchain: the .NET 11 SDK pinned in `global.json`, plus the net10.0 runtime the projects

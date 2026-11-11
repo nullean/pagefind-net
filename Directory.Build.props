@@ -25,12 +25,26 @@
     <Authors>Nullean and contributors</Authors>
     <Copyright>Nullean</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/nullean/pagefind-net</PackageProjectUrl>
+    <PackageProjectUrl>https://pagefind.nullean.net</PackageProjectUrl>
+    <PackageReleaseNotes>https://github.com/nullean/pagefind-net/releases</PackageReleaseNotes>
     <RepositoryUrl>https://github.com/nullean/pagefind-net</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <EnablePackageValidation>true</EnablePackageValidation>
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
     <PackageIcon>nuget-icon.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
+
+  <!-- the org icon, each project's README.md, and its agent skill (skills/<name>/SKILL.md) go into the package -->
+  <ItemGroup Condition="'$(IsPackable)' == 'true'">
+    <None Include="$(MSBuildThisFileDirectory)nuget-icon.png" Pack="true" PackagePath="\" Visible="false" />
+    <None Include="$(MSBuildProjectDirectory)/README.md" Pack="true" PackagePath="\"
+          Condition="Exists('$(MSBuildProjectDirectory)/README.md')" />
+    <!-- https://devblogs.microsoft.com/dotnet/delivering-skills-in-nuget-packages/ -->
+    <None Include="$(MSBuildProjectDirectory)/skills/**/*" Pack="true" PackagePath="skills/" Visible="false" />
+  </ItemGroup>
 
   <!-- test/ projects: relaxed warnings -->
   <PropertyGroup Condition="$(MSBuildProjectDirectory.Replace('\','/').Contains('/tests/'))">
