@@ -2,25 +2,23 @@ using System.Net;
 using System.Net.Sockets;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.Playwright;
+using Nullean.Cdp;
 using TUnit.Core.Interfaces;
 
 namespace Pagefind.Net.E2E.Tests;
 
 /// <summary>
-/// Shared fixture for Playwright E2E tests.
+/// Shared fixture for the E2E tests.
 ///
 /// Starts the <c>Pagefind.Net.Web</c> app on a random port using Kestrel,
-/// then connects Playwright to it for headless browser testing.
-/// No npm, no Node.js required — the frontend runtime comes from Pagefind.Net.Frontend.
+/// then launches the installed Chrome headless over CDP (Nullean.Cdp) to test it.
+/// No npm, no Node.js and no browser download — the frontend runtime comes from Pagefind.Net.Frontend,
+/// and Chrome is found where it is installed (<c>CDP_CHROME</c>, <c>CHROME_PATH</c>, the usual folders, <c>PATH</c>).
 /// </summary>
 public sealed class SearchFixture : IAsyncInitializer, IAsyncDisposable
 {
 	private WebApplication? _app;
-	private IPlaywright? _playwright;
-	private IBrowser? _browser;
-
-	public IBrowserContext? BrowserContext { get; private set; }
+	public Browser? Browser { get; private set; }
 	public string? BaseUrl { get; private set; }
 
 	public async Task InitializeAsync()
@@ -33,17 +31,13 @@ public sealed class SearchFixture : IAsyncInitializer, IAsyncDisposable
 		_app = BuildApp(port);
 		await _app.StartAsync();
 
-		// Launch Playwright.
-		_playwright = await Playwright.CreateAsync();
-		_browser = await _playwright.Chromium.LaunchAsync(new() { Headless = true });
-		BrowserContext = await _browser.NewContextAsync(new() { BaseURL = BaseUrl });
+		// Launch the installed Chrome, headless with a temporary profile.
+		Browser = await Browser.LaunchAsync();
 	}
 
 	public async ValueTask DisposeAsync()
 	{
-		if (BrowserContext is not null) await BrowserContext.DisposeAsync();
-		if (_browser is not null) await _browser.DisposeAsync();
-		_playwright?.Dispose();
+		if (Browser is not null) await Browser.DisposeAsync();
 		if (_app is not null) await _app.StopAsync();
 		if (_app is not null) await _app.DisposeAsync();
 	}
