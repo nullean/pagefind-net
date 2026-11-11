@@ -32,7 +32,18 @@ mise run ci               # what CI's build job runs: test, then pack, validate 
 mise run docs             # build the docs and serve them
 mise run check            # workflow security checks (zizmor)
 mise run clean            # delete build output
+mise run release          # show the release draft; `mise run release publish` releases
 ```
 
 `./build.sh <target>` runs the same build targets directly (`./build.sh --help` lists them). The E2E tests need
 Playwright's Chromium: after a build, `pwsh .artifacts/bin/Pagefind.Net.E2E.Tests/release/playwright.ps1 install chromium`.
+
+## Releasing
+
+release-drafter keeps a draft release up to date from the labels of merged pull requests; every pull request carries
+exactly one release label (`pr-labels.yml` enforces it). **Publishing the draft** releases: it creates the tag and runs
+`ci.yml` on it, whose `build` job tests, packs at the tag's version (MinVer), pushes to nuget.org with trusted
+publishing and appends the public API changes to the release notes. Pushing a tag on its own does nothing. In 0.x a
+`breaking` label bumps the minor version; 1.0 is the maintainer's call. See the
+[releasing](.claude/skills/releasing/SKILL.md) and [breaking-changes](.claude/skills/breaking-changes/SKILL.md)
+skills, and `mise run release` for the current draft.
