@@ -22,10 +22,8 @@ namespace Pagefind.Net.Tests;
 /// </summary>
 public sealed class GoldenCorpusTests
 {
-	private static readonly string CorpusDir =
-		Path.Combine(AppContext.BaseDirectory, "Corpus");
-	private static readonly string ReferenceDir =
-		Path.Combine(AppContext.BaseDirectory, "Fixtures", "reference-pagefind");
+	private static readonly string CorpusDir = Path.Combine(AppContext.BaseDirectory, "Corpus");
+	private static readonly string ReferenceDir = Path.Combine(AppContext.BaseDirectory, "Fixtures", "reference-pagefind");
 
 	[Test]
 	public async Task WritesExpectedOutputFiles()
@@ -43,11 +41,9 @@ public sealed class GoldenCorpusTests
 			var metaFiles = Directory.GetFiles(pagefindDir, "*.pf_meta");
 			metaFiles.Should().HaveCount(1, "there should be exactly one meta file");
 
-			Directory.GetFiles(Path.Combine(pagefindDir, "index"), "*.pf_index")
-				.Should().NotBeEmpty("at least one index chunk is expected");
+			Directory.GetFiles(Path.Combine(pagefindDir, "index"), "*.pf_index").Should().NotBeEmpty("at least one index chunk is expected");
 
-			Directory.GetFiles(Path.Combine(pagefindDir, "fragment"), "*.pf_fragment")
-				.Should().HaveCount(3, "one fragment per corpus page");
+			Directory.GetFiles(Path.Combine(pagefindDir, "fragment"), "*.pf_fragment").Should().HaveCount(3, "one fragment per corpus page");
 		}
 		finally
 		{
@@ -69,8 +65,7 @@ public sealed class GoldenCorpusTests
 			var json = await File.ReadAllTextAsync(entryPath);
 			using var doc = JsonDocument.Parse(json);
 
-			doc.RootElement.GetProperty("version").GetString()
-				.Should().Be(PagefindIndex.PagefindTargetVersion);
+			doc.RootElement.GetProperty("version").GetString().Should().Be(PagefindIndex.PagefindTargetVersion);
 			doc.RootElement.TryGetProperty("languages", out var langs).Should().BeTrue();
 			langs.TryGetProperty("en", out var en).Should().BeTrue();
 			en.TryGetProperty("hash", out _).Should().BeTrue();
@@ -100,7 +95,8 @@ public sealed class GoldenCorpusTests
 				var json = await ReadFramedJsonAsync(file);
 				using var doc = JsonDocument.Parse(json);
 				var url = doc.RootElement.GetProperty("url").GetString();
-				if (url is not null) urls.Add(url);
+				if (url is not null)
+					urls.Add(url);
 			}
 
 			urls.Should().Contain("/getting-started/");
@@ -130,8 +126,7 @@ public sealed class GoldenCorpusTests
 			var ourUrls = await CollectFragmentUrlsAsync(Path.Combine(outputDir, "pagefind", "fragment"));
 			var refUrls = await CollectFragmentUrlsAsync(Path.Combine(ReferenceDir, "fragment"));
 
-			ourUrls.Should().BeEquivalentTo(refUrls,
-				"both indexers should produce fragments for the same pages");
+			ourUrls.Should().BeEquivalentTo(refUrls, "both indexers should produce fragments for the same pages");
 		}
 		finally
 		{
@@ -218,13 +213,15 @@ public sealed class GoldenCorpusTests
 	private static async Task<List<string>> CollectFragmentUrlsAsync(string fragmentDir)
 	{
 		var urls = new List<string>();
-		if (!Directory.Exists(fragmentDir)) return urls;
+		if (!Directory.Exists(fragmentDir))
+			return urls;
 		foreach (var file in Directory.GetFiles(fragmentDir, "*.pf_fragment"))
 		{
 			var json = await ReadFramedJsonAsync(file);
 			using var doc = JsonDocument.Parse(json);
 			var url = doc.RootElement.GetProperty("url").GetString();
-			if (url is not null) urls.Add(url);
+			if (url is not null)
+				urls.Add(url);
 		}
 		return urls;
 	}

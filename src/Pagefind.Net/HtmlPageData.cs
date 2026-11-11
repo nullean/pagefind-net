@@ -28,8 +28,7 @@ public sealed class HtmlPageData
 	/// <summary>
 	/// Facet filter values for this page.
 	/// </summary>
-	public IReadOnlyDictionary<string, IReadOnlyList<string>> Filters { get; init; } =
-		new Dictionary<string, IReadOnlyList<string>>();
+	public IReadOnlyDictionary<string, IReadOnlyList<string>> Filters { get; init; } = new Dictionary<string, IReadOnlyList<string>>();
 }
 
 /// <summary>

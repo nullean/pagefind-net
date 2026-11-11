@@ -136,8 +136,7 @@ public sealed class TokenizerTests
 		foreach (var tc in cases)
 		{
 			var actual = Tokenizer.Tokenize(tc.Input).ToList();
-			actual.Should().BeEquivalentTo(tc.Expected,
-				because: $"tokenizer parity failed for input: {tc.Input}");
+			actual.Should().BeEquivalentTo(tc.Expected, because: $"tokenizer parity failed for input: {tc.Input}");
 		}
 	}
 

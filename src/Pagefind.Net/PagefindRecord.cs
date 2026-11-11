@@ -42,8 +42,7 @@ public sealed class PagefindRecord
 	/// Facet filter values for this page. Deferred in the first release; pass an
 	/// empty dictionary (the default). The filter data is omitted from the index.
 	/// </summary>
-	public IReadOnlyDictionary<string, IReadOnlyList<string>> Filters { get; init; } =
-		new Dictionary<string, IReadOnlyList<string>>();
+	public IReadOnlyDictionary<string, IReadOnlyList<string>> Filters { get; init; } = new Dictionary<string, IReadOnlyList<string>>();
 
 	/// <summary>
 	/// Optional per-position weight map. When provided, each word position in

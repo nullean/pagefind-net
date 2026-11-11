@@ -37,9 +37,12 @@ public sealed class SearchFixture : IAsyncInitializer, IAsyncDisposable
 
 	public async ValueTask DisposeAsync()
 	{
-		if (Browser is not null) await Browser.DisposeAsync();
-		if (_app is not null) await _app.StopAsync();
-		if (_app is not null) await _app.DisposeAsync();
+		if (Browser is not null)
+			await Browser.DisposeAsync();
+		if (_app is not null)
+			await _app.StopAsync();
+		if (_app is not null)
+			await _app.DisposeAsync();
 	}
 
 	/// <summary>
@@ -49,15 +52,10 @@ public sealed class SearchFixture : IAsyncInitializer, IAsyncDisposable
 	private static WebApplication BuildApp(int port)
 	{
 		// Point the content root at the Pagefind.Net.Web project directory so it finds wwwroot/.
-		var webProjectDir = FindWebProjectDir()
-			?? throw new InvalidOperationException(
-				"Cannot find examples/Pagefind.Net.Web. Ensure the solution structure is intact.");
+		var webProjectDir = FindWebProjectDir() ??
+			throw new InvalidOperationException("Cannot find examples/Pagefind.Net.Web. Ensure the solution structure is intact.");
 
-		var builder = WebApplication.CreateBuilder(new WebApplicationOptions
-		{
-			ContentRootPath = webProjectDir,
-			Args = [$"--urls=http://localhost:{port}"]
-		});
+		var builder = WebApplication.CreateBuilder(new WebApplicationOptions { ContentRootPath = webProjectDir, Args = [$"--urls=http://localhost:{port}"] });
 		builder.WebHost.UseUrls($"http://localhost:{port}");
 
 		var app = builder.Build();
@@ -76,10 +74,7 @@ public sealed class SearchFixture : IAsyncInitializer, IAsyncDisposable
 		contentTypeProvider.Mappings[".pf_fragment"] = "application/octet-stream";
 		contentTypeProvider.Mappings[".pagefind"] = "application/wasm";
 
-		app.UseStaticFiles(new Microsoft.AspNetCore.Builder.StaticFileOptions
-		{
-			ContentTypeProvider = contentTypeProvider
-		});
+		app.UseStaticFiles(new Microsoft.AspNetCore.Builder.StaticFileOptions { ContentTypeProvider = contentTypeProvider });
 		app.MapFallbackToFile("index.html");
 
 		return app;
@@ -89,67 +84,52 @@ public sealed class SearchFixture : IAsyncInitializer, IAsyncDisposable
 	/// Uses the same corpus as the web example. Import a subset so the tests have known documents.
 	/// </summary>
 	private static PagefindRecord[] GetCorpus() =>
-	[
-		new()
-		{
-			Url = "/getting-started/",
-			Title = "Getting Started",
-			Content = "Welcome to pagefind-net, a pure .NET implementation of the Pagefind indexer. "
-				+ "Install the NuGet package and build a search index for your static site in seconds.",
-			WeightedSegments =
-			[
-				new("Getting Started", Weight: 7),
-				new("Installation Quickstart", Weight: 4),
-			],
-			Meta = new Dictionary<string, string> { ["title"] = "Getting Started" },
-		},
-		new()
-		{
-			Url = "/configuration/",
-			Title = "Configuration",
-			Content = "Configure PagefindIndexOptions to control language, stemming, and tokenisation. "
-				+ "Set IncludeCharacters to preserve special characters like # or @ in tokens.",
-			WeightedSegments =
-			[
-				new("Configuration", Weight: 7),
-				new("Language IncludeCharacters Options", Weight: 4),
-			],
-			Meta = new Dictionary<string, string> { ["title"] = "Configuration" },
-		},
-		new()
-		{
-			Url = "/api-reference/",
-			Title = "API Reference",
-			Content = "Complete reference for the public API: PagefindIndex, PagefindRecord, "
-				+ "WeightedSegment, PagefindAnchor, and PagefindIndexOptions.",
-			WeightedSegments =
-			[
-				new("API Reference", Weight: 7),
-				new("PagefindIndex PagefindRecord WeightedSegment", Weight: 4),
-			],
-			Meta = new Dictionary<string, string> { ["title"] = "API Reference" },
-		},
-		new()
-		{
-			Url = "/performance/",
-			Title = "Performance",
-			Content = "Performance: pagefind-net is designed for zero-allocation hot paths. The tokeniser uses a "
-				+ "push-based span API, the stemmer operates entirely on stack buffers.",
-			WeightedSegments =
-			[
-				new("Performance", Weight: 7),
-				new("Zero Allocation Span Benchmarks", Weight: 4),
-			],
-			Meta = new Dictionary<string, string> { ["title"] = "Performance" },
-		},
-	];
+		[
+			new()
+			{
+				Url = "/getting-started/",
+				Title = "Getting Started",
+				Content = "Welcome to pagefind-net, a pure .NET implementation of the Pagefind indexer. " +
+					"Install the NuGet package and build a search index for your static site in seconds.",
+				WeightedSegments = [new("Getting Started", Weight: 7), new("Installation Quickstart", Weight: 4),],
+				Meta = new Dictionary<string, string> { ["title"] = "Getting Started" },
+			},
+			new()
+			{
+				Url = "/configuration/",
+				Title = "Configuration",
+				Content = "Configure PagefindIndexOptions to control language, stemming, and tokenisation. " +
+					"Set IncludeCharacters to preserve special characters like # or @ in tokens.",
+				WeightedSegments = [new("Configuration", Weight: 7), new("Language IncludeCharacters Options", Weight: 4),],
+				Meta = new Dictionary<string, string> { ["title"] = "Configuration" },
+			},
+			new()
+			{
+				Url = "/api-reference/",
+				Title = "API Reference",
+				Content = "Complete reference for the public API: PagefindIndex, PagefindRecord, " +
+					"WeightedSegment, PagefindAnchor, and PagefindIndexOptions.",
+				WeightedSegments = [new("API Reference", Weight: 7), new("PagefindIndex PagefindRecord WeightedSegment", Weight: 4),],
+				Meta = new Dictionary<string, string> { ["title"] = "API Reference" },
+			},
+			new()
+			{
+				Url = "/performance/",
+				Title = "Performance",
+				Content = "Performance: pagefind-net is designed for zero-allocation hot paths. The tokeniser uses a " +
+					"push-based span API, the stemmer operates entirely on stack buffers.",
+				WeightedSegments = [new("Performance", Weight: 7), new("Zero Allocation Span Benchmarks", Weight: 4),],
+				Meta = new Dictionary<string, string> { ["title"] = "Performance" },
+			},
+		];
 
 	private static string? FindWebProjectDir()
 	{
 		var dir = new DirectoryInfo(AppContext.BaseDirectory);
 		while (dir != null && !dir.GetFiles("*.slnx").Any())
 			dir = dir.Parent;
-		if (dir is null) return null;
+		if (dir is null)
+			return null;
 		var candidate = Path.Combine(dir.FullName, "examples", "Pagefind.Net.Web");
 		return Directory.Exists(candidate) ? candidate : null;
 	}

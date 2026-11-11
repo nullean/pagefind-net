@@ -57,11 +57,11 @@ public sealed class StemmerTests
 		foreach (var line in lines.Skip(1)) // skip header
 		{
 			var parts = line.Split(',');
-			if (parts.Length < 2) continue;
+			if (parts.Length < 2)
+				continue;
 			var input = parts[0].Trim();
 			var expected = parts[1].Trim();
-			EnglishStemmer.Stem(input).Should().Be(expected,
-				because: $"stemmer parity: '{input}' → '{expected}'");
+			EnglishStemmer.Stem(input).Should().Be(expected, because: $"stemmer parity: '{input}' → '{expected}'");
 		}
 	}
 }

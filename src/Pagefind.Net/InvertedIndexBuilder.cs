@@ -88,8 +88,7 @@ internal sealed class InvertedIndexBuilder
 					? record.PositionWeights[pos]
 					: tokenized.WordWeights.TryGetValue(word, out var bw) ? bw : (byte)0;
 				var compoundCount = tokenized.CompoundCountAtPosition.GetValueOrDefault(pos, 1);
-				var partialWeight = baseWeight > 0 && compoundCount > 0
-					? (byte)Math.Max(1, baseWeight / compoundCount) : (byte)0;
+				var partialWeight = baseWeight > 0 && compoundCount > 0 ? (byte)Math.Max(1, baseWeight / compoundCount) : (byte)0;
 				if (!grouped.TryGetValue(partialWeight, out var posList))
 					grouped[partialWeight] = posList = [];
 				posList.Add(pos);
@@ -104,13 +103,12 @@ internal sealed class InvertedIndexBuilder
 			var fieldName = metaFieldOrder[fieldIdx];
 
 			// Skip meta fields not in the allowed set (but always include "title")
-			if (indexedMetaFields is not null
-				&& !indexedMetaFields.Contains(fieldName)
-				&& !fieldName.Equals("title", StringComparison.Ordinal))
+			if (indexedMetaFields is not null && !indexedMetaFields.Contains(fieldName) && !fieldName.Equals("title", StringComparison.Ordinal))
 				continue;
 
 			var fieldValue = record.Meta[fieldName];
-			if (string.IsNullOrWhiteSpace(fieldValue)) continue;
+			if (string.IsNullOrWhiteSpace(fieldValue))
+				continue;
 
 			var metaWords = new Dictionary<string, List<int>>(StringComparer.Ordinal);
 			var metaCompound = new Dictionary<string, List<int>>(StringComparer.Ordinal);
@@ -121,8 +119,10 @@ internal sealed class InvertedIndexBuilder
 			var allMetaWords = new Dictionary<string, List<int>>(metaWords, StringComparer.Ordinal);
 			foreach (var (w, p) in metaCompound)
 			{
-				if (allMetaWords.TryGetValue(w, out var existing)) existing.AddRange(p);
-				else allMetaWords[w] = [.. p];
+				if (allMetaWords.TryGetValue(w, out var existing))
+					existing.AddRange(p);
+				else
+					allMetaWords[w] = [.. p];
 			}
 
 			foreach (var (w, p) in allMetaWords)
@@ -192,7 +192,8 @@ internal sealed class InvertedIndexBuilder
 			Dictionary<string, List<int>> compoundPositions,
 			Dictionary<int, int> compoundCountAtPosition,
 			Stemmer stemmer,
-			int globalPosition)
+			int globalPosition
+		)
 		{
 			_positions = positions;
 			_lookup = positions.GetAlternateLookup<ReadOnlySpan<char>>();
@@ -231,7 +232,8 @@ internal sealed class InvertedIndexBuilder
 		{
 			Span<char> stemBuf = stackalloc char[token.Length];
 			var stemLen = _stemmer.Stem(token, stemBuf);
-			if (stemLen == 0) return;
+			if (stemLen == 0)
+				return;
 			var stemmed = stemBuf[..stemLen];
 
 			if (!_compoundLookup.TryGetValue(stemmed, out var positions))
@@ -265,13 +267,15 @@ internal sealed class InvertedIndexBuilder
 			_stemmer = stemmer;
 		}
 
-		public void OnWordBoundary() { }
+		public void OnWordBoundary()
+		{ }
 
 		public void OnToken(scoped ReadOnlySpan<char> token)
 		{
 			Span<char> stemBuf = stackalloc char[token.Length];
 			var stemLen = _stemmer.Stem(token, stemBuf);
-			if (stemLen == 0) return;
+			if (stemLen == 0)
+				return;
 
 			var stemmed = stemBuf[..stemLen];
 			if (!_lookup.Contains(stemmed))
@@ -291,7 +295,8 @@ internal sealed class TokenizedRecord(
 	Dictionary<string, List<int>> contentWords,
 	Dictionary<string, byte> wordWeights,
 	Dictionary<string, List<int>> compoundPositions,
-	Dictionary<int, int> compoundCountAtPosition)
+	Dictionary<int, int> compoundCountAtPosition
+)
 {
 	internal Dictionary<string, List<int>> ContentWords { get; } = contentWords;
 	internal Dictionary<string, byte> WordWeights { get; } = wordWeights;

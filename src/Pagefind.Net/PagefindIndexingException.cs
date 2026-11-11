@@ -13,8 +13,7 @@ public class PagefindIndexingException : Exception
 	/// <summary>Title of the record that failed indexing.</summary>
 	public string Title { get; }
 
-	public PagefindIndexingException(string url, string title, Exception inner)
-		: base($"Failed to index '{url}' ({title})", inner)
+	public PagefindIndexingException(string url, string title, Exception inner) : base($"Failed to index '{url}' ({title})", inner)
 	{
 		Url = url;
 		Title = title;

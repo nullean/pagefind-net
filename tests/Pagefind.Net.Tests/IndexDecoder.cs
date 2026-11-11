@@ -188,8 +188,7 @@ internal static class IndexDecoder
 	/// <summary>
 	/// Finds the single .pf_meta file in a pagefind output directory.
 	/// </summary>
-	internal static string? FindMetaFile(string pagefindDir) =>
-		Directory.GetFiles(pagefindDir, "*.pf_meta").FirstOrDefault();
+	internal static string? FindMetaFile(string pagefindDir) => Directory.GetFiles(pagefindDir, "*.pf_meta").FirstOrDefault();
 
 	/// <summary>
 	/// Reads all .pf_fragment files from a directory into decoded fragments, sorted by URL.
@@ -223,11 +222,7 @@ internal sealed record DecodedMetaPage(string Hash, int WordCount);
 
 internal sealed record DecodedMetaChunk(string From, string To, string Hash);
 
-internal sealed record DecodedMeta(
-	string Version,
-	List<DecodedMetaPage> Pages,
-	List<DecodedMetaChunk> Chunks,
-	List<string> MetaFields);
+internal sealed record DecodedMeta(string Version, List<DecodedMetaPage> Pages, List<DecodedMetaChunk> Chunks, List<string> MetaFields);
 
 internal sealed class DecodedFragment
 {

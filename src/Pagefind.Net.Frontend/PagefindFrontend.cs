@@ -30,11 +30,7 @@ public static class PagefindFrontend
 	/// <param name="force">When <c>true</c>, always overwrite existing files.</param>
 	/// <param name="ct">Cancellation token.</param>
 	/// <returns>The list of file paths that were written.</returns>
-	public static async Task<string[]> ExtractToAsync(
-		IFileSystem fs,
-		string outputDirectory,
-		bool force = false,
-		CancellationToken ct = default)
+	public static async Task<string[]> ExtractToAsync(IFileSystem fs, string outputDirectory, bool force = false, CancellationToken ct = default)
 	{
 		fs.Directory.CreateDirectory(outputDirectory);
 
@@ -54,7 +50,8 @@ public static class PagefindFrontend
 						break;
 					}
 				}
-				if (allExist) return [];
+				if (allExist)
+					return [];
 			}
 		}
 
@@ -73,22 +70,16 @@ public static class PagefindFrontend
 	/// <summary>
 	/// Convenience overload using the real file system.
 	/// </summary>
-	public static Task<string[]> ExtractToAsync(
-		string outputDirectory,
-		bool force = false,
-		CancellationToken ct = default)
-		=> ExtractToAsync(new FileSystem(), outputDirectory, force, ct);
+	public static Task<string[]> ExtractToAsync(string outputDirectory, bool force = false, CancellationToken ct = default) =>
+		ExtractToAsync(new FileSystem(), outputDirectory, force, ct);
 
-	private static async Task ExtractResourceAsync(
-		IFileSystem fs, string resourceName, string targetPath, CancellationToken ct)
+	private static async Task ExtractResourceAsync(IFileSystem fs, string resourceName, string targetPath, CancellationToken ct)
 	{
-		await using var resourceStream = ResourceAssembly.GetManifestResourceStream(resourceName)
-			?? throw new InvalidOperationException(
-				$"Embedded resource '{resourceName}' not found in {ResourceAssembly.GetName().Name}.");
+		await using var resourceStream = ResourceAssembly.GetManifestResourceStream(resourceName) ??
+			throw new InvalidOperationException($"Embedded resource '{resourceName}' not found in {ResourceAssembly.GetName().Name}.");
 
 		await using var gzip = new GZipStream(resourceStream, CompressionMode.Decompress);
-		await using var output = fs.FileStream.New(targetPath, FileMode.Create, FileAccess.Write,
-			FileShare.None, 65536, FileOptions.Asynchronous);
+		await using var output = fs.FileStream.New(targetPath, FileMode.Create, FileAccess.Write, FileShare.None, 65536, FileOptions.Asynchronous);
 		await gzip.CopyToAsync(output, ct);
 	}
 }
