@@ -1,0 +1,6 @@
+- link "Getting Started"
+- StaticText "/getting-started/"
+- StaticText "Welcome to pagefind-net, a pure .NET implementation of the Pagefind indexer. "
+- mark
+  - StaticText "Install"
+- StaticText " the NuGet package and build a search index for your static site in seconds."

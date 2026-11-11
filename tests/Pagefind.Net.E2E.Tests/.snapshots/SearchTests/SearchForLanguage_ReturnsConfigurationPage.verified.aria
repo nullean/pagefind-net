@@ -1,0 +1,6 @@
+- link "Configuration"
+- StaticText "/configuration/"
+- StaticText "Configure PagefindIndexOptions to control "
+- mark
+  - StaticText "language,"
+- StaticText " stemming, and tokenisation. Set IncludeCharacters to preserve special characters like # or @ in tokens."

@@ -22,7 +22,7 @@ depends = ["setup"]
 run = "dotnet run --project build/scripts -- build"
 
 [tasks.test]
-description = "Build, then run the tests (the E2E tests need Playwright's Chromium installed)"
+description = "Build, then run the tests (the E2E tests drive the installed Chrome; CDP_CHROME names another)"
 depends = ["setup"]
 run = "dotnet run --project build/scripts -- test"
 
