@@ -5,13 +5,11 @@
     <Description>E2E tests: hosts the Pagefind.Net.Web app on a random port and searches it in the installed Chrome (Nullean.Cdp), snapshotting the rendered results with Nullean.Snapshots.</Description>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="TUnit" />
     <PackageReference Include="AwesomeAssertions" />
     <PackageReference Include="Nullean.Cdp" />
     <PackageReference Include="Nullean.Snapshots.Browser.Assertions" />
     <PackageReference Include="Nullean.Snapshots.TUnit" />
-    <PackageReference Include="GitHubActionsTestLogger" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Pagefind.Net\Pagefind.Net.csproj" />

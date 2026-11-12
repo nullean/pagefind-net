@@ -4,12 +4,9 @@
     <RootNamespace>Pagefind.Net.Tests</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="System.IO.Abstractions.TestingHelpers" />
     <PackageReference Include="TUnit" />
     <PackageReference Include="AwesomeAssertions" />
-    <PackageReference Include="Verify.TUnit" />
-    <PackageReference Include="GitHubActionsTestLogger" />
     <PackageReference Include="System.Formats.Cbor" />
   </ItemGroup>
   <ItemGroup>
