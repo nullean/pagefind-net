@@ -13,7 +13,7 @@ gh = "latest"
 zizmor = "1"
 
 [tasks.setup]
-description = "Restore the local .NET tools (minver, release-notes, nupkg-validator, assembly-differ, curb)"
+description = "Restore the local .NET tools (minver, assembly-differ, nupkg-validator, curb)"
 run = "dotnet tool restore"
 
 [tasks.build]
@@ -41,8 +41,8 @@ description = "Build, pack the NuGet packages and validate them"
 depends = ["setup"]
 run = [
   "dotnet run --project build/scripts -- build",
-  "dotnet run --project build/scripts -- generatepackages -s true",
-  "dotnet run --project build/scripts -- validatepackages -s true",
+  "dotnet run --project build/scripts -- generatepackages -s",
+  "dotnet run --project build/scripts -- validatepackages -s",
 ]
 
 [tasks.docs]
@@ -59,9 +59,9 @@ depends = ["setup"]
 run = [
   "dotnet run --project build/scripts -- test",
   "dotnet curb check .",
-  "dotnet run --project build/scripts -- generatepackages -s true",
-  "dotnet run --project build/scripts -- validatepackages -s true",
-  "dotnet run --project build/scripts -- generateapichanges -s true",
+  "dotnet run --project build/scripts -- generatepackages -s",
+  "dotnet run --project build/scripts -- validatepackages -s",
+  "dotnet run --project build/scripts -- generateapichanges -s",
 ]
 
 [tasks.release]
