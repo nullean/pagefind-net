@@ -39,8 +39,8 @@ let main argv =
               if Paths.Output.Exists then Paths.Output.Delete true
               sh $"dotnet clean" }
         | Build -> command {
-              composes [Clean]
-              executes (shell { sh $"dotnet build -c Release" }) }
+              composes [Clean] }
+                   |> executes { sh $"dotnet build -c Release" }
         | Test -> target [Build] {
               sh $"dotnet run --project tests/Pagefind.Net.Tests/Pagefind.Net.Tests.csproj -c Release"
               sh $"dotnet run --project tests/Pagefind.Net.E2E.Tests/Pagefind.Net.E2E.Tests.csproj -c Release" }
