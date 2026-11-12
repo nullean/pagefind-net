@@ -7,6 +7,6 @@
     "emit-runtime": "node emit-runtime.mjs"
   },
   "devDependencies": {
-    "pagefind": "1.5.2"
+    "pagefind": "1.6.0"
   }
 }
