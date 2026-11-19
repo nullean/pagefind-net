@@ -34,7 +34,7 @@ jobs:
       with:
         persist-credentials: false
 
-    - uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
+    - uses: jdx/mise-action@d5574b52816a478f9d4e6529a3f6ff17a8a36785 # v5.2.8
       with:
         cache: false # this workflow publishes what these jobs build; never restore a cache a PR could have written
       env:
@@ -64,7 +64,7 @@ jobs:
         echo exit code $?
         git tag --list
 
-    - uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
+    - uses: jdx/mise-action@d5574b52816a478f9d4e6529a3f6ff17a8a36785 # v5.2.8
       with:
         cache: false # this workflow publishes what these jobs build; never restore a cache a PR could have written
       env:
@@ -103,7 +103,7 @@ jobs:
     permissions:
       actions: read # read main's ci.yml runs
     steps:
-      - uses: nullean/.github/actions/require-green-main@f9eb30d28e48b3f6b8ff1f4e7dae1d2b7b2d544b # v1.6.0
+      - uses: nullean/.github/actions/require-green-main@e21d5f59405aa7078e51825cd4c407191e28562f # v1.6.1
 
   # main's build job tested this commit; pack it again (the tag gives the version), validate, and publish to nuget.org.
   release:
@@ -123,7 +123,7 @@ jobs:
         echo exit code $?
         git tag --list
 
-    - uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
+    - uses: jdx/mise-action@d5574b52816a478f9d4e6529a3f6ff17a8a36785 # v5.2.8
       with:
         cache: false # a release never restores a cache PR builds could have written
       env:
@@ -187,7 +187,7 @@ jobs:
           persist-credentials: false
 
       - name: Build documentation
-        uses: elastic/docs-builder@036a375759d876e2df67955ebec0382cd6b09249 # v1
+        uses: elastic/docs-builder@733c0dd3ad493ec42932d37608d34ab04217989a # v1.76.0
         env:
           FEATURE_NAVIGATION_PREVIEW: true
 
